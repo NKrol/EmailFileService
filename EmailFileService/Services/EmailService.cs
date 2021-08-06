@@ -1,25 +1,18 @@
-﻿using System;
+﻿using AutoMapper;
+using EmailFileService.Entities;
+using EmailFileService.Exception;
+using EmailFileService.Model;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using EmailFileService.Entities;
-using EmailFileService.Exception;
-using EmailFileService.Model;
-using EmailFileService.Model.Validators;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Formatters;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using File = System.IO.File;
 
 namespace EmailFileService.Services
 {
@@ -169,6 +162,32 @@ namespace EmailFileService.Services
                 using (var writer = new FileStream(fullPath, FileMode.Create))
                 {
                     file.CopyTo(writer);
+                    //using (var aes = Aes.Create())
+                    //{
+                    //    byte[] key =
+                    //    {
+                    //        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+                    //        0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
+                    //    };
+
+                    //    aes.Key = key;
+                    //    byte[] iv = aes.IV;
+
+                    //    writer.Write(iv, 0, iv.Length);
+
+                    //    using (CryptoStream cryptoStream = new(
+                    //        writer,
+                    //        aes.CreateEncryptor(),
+                    //        CryptoStreamMode.Write))
+                    //    {
+                    //        using (StreamWriter encryptWriter = new(cryptoStream))
+                    //        {
+                    //            encryptWriter.WriteLine("");
+                    //        }
+                    //    }
+
+
+                    //}
                 }
             }
             else throw new NotFoundException("Bad Request");
@@ -285,9 +304,9 @@ namespace EmailFileService.Services
                 .ThenInclude(ud => ud.Files)
                 .Where(u => u.Id == id);
             var mainDirectory = _userServiceAccessor.GetMainDirectory;
-            var currentDirectory = Directory.GetCurrentDirectory();
+            var currentDirectory = GetDirectoryToSaveUsersFiles();
 
-            return File.Exists($"{currentDirectory}/UserDirectory/{mainDirectory}/{path}");
+            return Directory.Exists($"{currentDirectory}{mainDirectory}{ path}");
         }
 
         private bool UserHaveThisDirectory(int? id, string directory)
@@ -296,9 +315,9 @@ namespace EmailFileService.Services
                 .Include(u => u.Directories)
                 .Where(u => u.Id == id);
             var mainDirectory = _userServiceAccessor.GetMainDirectory;
-            var currentDirectory = Directory.GetCurrentDirectory();
+            var currentDirectory = GetDirectoryToSaveUsersFiles();
 
-            return Directory.Exists($"{currentDirectory}/UserDirectory/{mainDirectory}");
+            return Directory.Exists($"{currentDirectory}{mainDirectory}");
         }
 
         private UserDirectory UserHaveThisDirectory(UserDirectory userDirectory)

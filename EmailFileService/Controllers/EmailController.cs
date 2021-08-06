@@ -72,6 +72,7 @@ namespace EmailFileService.Controllers
 
         [HttpGet]
         [Route("downloadFile")]
+        [Authorize]
         public async Task<IActionResult> Download([FromQuery] string fileName)
         {
             var downloadFileDto = _emailService.DownloadFile(fileName);
