@@ -22,6 +22,11 @@
 
   <ItemGroup>
     <Folder Include="UserDirectory\" />
+    <Folder Include="UserDirectory\asd5_asd_com\Dokumenty\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
   </ItemGroup>
 
 </Project>

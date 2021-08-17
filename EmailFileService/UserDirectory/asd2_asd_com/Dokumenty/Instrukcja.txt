@@ -1,0 +1,14 @@
+Obraz .iso który zobaczysz po wypakowaniu jest gotowy do u¿ycia ale s³u¿y równie¿ do utworzenia innych.
+Aby to zrobiæ w³¹cz wybrany plik .cmd (skrypt poleceñ windows) a rozpocznie siê tworzenie obrazu .iso
+* Nie zamykaj okna podczas tworzenia. Zamknie siê samo po utworzeniu.
+
+Sumê kontroln¹ mo¿esz sprawdziæ za pomoc¹ programu hashmyfiles przeci¹gaj¹c obraz do niego lub przez File > Add Files. 
+PóŸniej mo¿esz porównaæ j¹ z t¹ na basewin.pl lub wpisuj¹c w google.
+
+
+Dla linux i macos:
+
+Przenieœ z podfolderu svf wszystkie pliki .svf do folderu g³ównego (tam gdzie znajduj¹ siê pliki .cmd)
+
+W wierszu poleceñ przejdŸ do lokalizacji gdzie siê znajduj¹. Tworzenie obrazu przez ./smv x nazwaobrazu.svf -br .
+* Mog¹ byæ wymagane prawa administratora.

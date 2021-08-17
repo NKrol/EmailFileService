@@ -57,6 +57,8 @@ namespace EmailFileService
                         new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authenticationSettings.JwtIssuer))
                 };
             });
+
+            services.AddSingleton(new FileEncryptDecryptService());
             services.AddAutoMapper(this.GetType().Assembly);
             services.AddSingleton(authenticationSettings);
             services.AddScoped<IEmailService, EmailService>();

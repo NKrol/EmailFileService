@@ -29,14 +29,16 @@ namespace EmailFileService.Services
     {
         private readonly EmailServiceDbContext _dbContext;
         private readonly IPasswordHasher<User> _hasher;
+        private readonly FileEncryptDecryptService _encrypt;
         private readonly Authentication _authentication;
         private readonly IMapper _mapper;
         private readonly IUserServiceAccessor _userServiceAccessor;
 
-        public EmailService(EmailServiceDbContext dbContext, IPasswordHasher<User> hasher, Authentication authentication, IMapper mapper, IUserServiceAccessor userServiceAccessor)
+        public EmailService(EmailServiceDbContext dbContext, IPasswordHasher<User> hasher,FileEncryptDecryptService encrypt ,Authentication authentication, IMapper mapper, IUserServiceAccessor userServiceAccessor)
         {
             _dbContext = dbContext;
             _hasher = hasher;
+            _encrypt = encrypt;
             _authentication = authentication;
             _mapper = mapper;
             _userServiceAccessor = userServiceAccessor;
@@ -162,33 +164,9 @@ namespace EmailFileService.Services
                 using (var writer = new FileStream(fullPath, FileMode.Create))
                 {
                     file.CopyTo(writer);
-                    //using (var aes = Aes.Create())
-                    //{
-                    //    byte[] key =
-                    //    {
-                    //        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-                    //        0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
-                    //    };
-
-                    //    aes.Key = key;
-                    //    byte[] iv = aes.IV;
-
-                    //    writer.Write(iv, 0, iv.Length);
-
-                    //    using (CryptoStream cryptoStream = new(
-                    //        writer,
-                    //        aes.CreateEncryptor(),
-                    //        CryptoStreamMode.Write))
-                    //    {
-                    //        using (StreamWriter encryptWriter = new(cryptoStream))
-                    //        {
-                    //            encryptWriter.WriteLine("");
-                    //        }
-                    //    }
-
-
-                    //}
                 }
+
+                _encrypt.FileEncrypt(fullPath);
             }
             else throw new NotFoundException("Bad Request");
         }
@@ -272,6 +250,8 @@ namespace EmailFileService.Services
 
             var ex = Path.GetExtension(fullPath).ToLowerInvariant();
 
+            _encrypt.FileDecrypt(fullPath);
+
             return new DownloadFileDto()
             {
                 ExtensionFile = GetTypeOfFile()[ex],
@@ -325,8 +305,7 @@ namespace EmailFileService.Services
 
             return userDirectory;
         }
-
-
+        
         private string GetDirectoryToSaveUsersFiles() => Directory.GetCurrentDirectory() + "/UserDirectory/";
 
         private Dictionary<string, string> GetTypeOfFile()

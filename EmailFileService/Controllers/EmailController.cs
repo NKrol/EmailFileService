@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -82,10 +83,12 @@ namespace EmailFileService.Controllers
             {
                 await stream.CopyToAsync(memory);
             }
-
+            
+            System.IO.File.Delete(downloadFileDto.PathToFile);
             memory.Position = 0;
 
             return File(memory, downloadFileDto.ExtensionFile, fileName);
+
         }
     }
 }
