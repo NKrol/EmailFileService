@@ -20,6 +20,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 
 namespace EmailFileService
@@ -58,7 +59,7 @@ namespace EmailFileService
                 };
             });
 
-            services.AddSingleton(new FileEncryptDecryptService());
+            services.AddScoped<IFileEncryptDecryptService, FileEncryptDecryptService>();
             services.AddAutoMapper(this.GetType().Assembly);
             services.AddSingleton(authenticationSettings);
             services.AddScoped<IEmailService, EmailService>();
@@ -67,8 +68,12 @@ namespace EmailFileService
             services.AddControllers().AddFluentValidation();
             services.AddRazorPages();
             services.AddDbContext<EmailServiceDbContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+                options
+                    .LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Command.Name }, LogLevel.Information)
+                    .EnableSensitiveDataLogging()
+                    .UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             services.AddScoped<IValidator<RegisterUserDto>, RegisterValidator>();
+            services.AddScoped<IValidator<Email>, EmailSendValidator>();
             services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
             services.AddHttpContextAccessor();
         }

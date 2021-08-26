@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace EmailFileService.Controllers
 {
@@ -34,10 +35,10 @@ namespace EmailFileService.Controllers
         public ActionResult SendEmail([FromForm]Email email, [FromForm]IFormFile file)
         {
             
-            _emailService.SendEmail(email, file);
+            var result = _emailService.SendEmail(email, file);
 
 
-            return Ok();
+            return Ok(result);
         }
         [HttpGet]
         [Route("getMyFiles")]
@@ -79,14 +80,14 @@ namespace EmailFileService.Controllers
             var downloadFileDto = _emailService.DownloadFile(fileName);
 
             var memory = new MemoryStream();
-            using (var stream = new FileStream(downloadFileDto.PathToFile, FileMode.Open))
+            await using (var stream = new FileStream(downloadFileDto.PathToFile, FileMode.Open))
             {
                 await stream.CopyToAsync(memory);
             }
-            
+
             System.IO.File.Delete(downloadFileDto.PathToFile);
             memory.Position = 0;
-
+                
             return File(memory, downloadFileDto.ExtensionFile, fileName);
 
         }

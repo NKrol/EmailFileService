@@ -11,7 +11,7 @@ namespace EmailFileService.Entities
     {
         public int Id { get; set; }
         public DateTime AddDate { get; private set; } = DateTime.Now;
-        public DateTime? LastUpdate { get; private set; }
+        public DateTime? LastUpdate { get; set; }
         public OperationType OperationType { get; set; } = OperationType.Create;
 
 

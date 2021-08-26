@@ -12,5 +12,7 @@ namespace EmailFileService.Entities
         public string PasswordHash { get; set; }
         public virtual IEnumerable<UserDirectory> Directories { get; set; }
 
+        public virtual Keys Keys { get; set; }
+
     }
 }

@@ -2,3 +2,9 @@
 
 # CA1416: Walidacja zgodności z platformą
 dotnet_diagnostic.CA1416.severity = silent
+
+# CS8632: Adnotacja dla typów referencyjnych dopuszczających wartość null powinna być używana tylko w kodzie z kontekstem adnotacji „#nullable”.
+dotnet_diagnostic.CS8632.severity = silent
+
+# CS0168: Zmienna jest zadeklarowana, ale nie jest nigdy używana
+dotnet_diagnostic.CS0168.severity = silent
