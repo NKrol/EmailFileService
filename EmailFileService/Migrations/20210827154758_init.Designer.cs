@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmailFileService.Migrations
 {
     [DbContext(typeof(EmailServiceDbContext))]
-    [Migration("20210804184103_Init")]
-    partial class Init
+    [Migration("20210827154758_init")]
+    partial class init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -30,6 +30,12 @@ namespace EmailFileService.Migrations
 
                     b.Property<DateTime>("AddDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FileType")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("LastUpdate")
                         .HasColumnType("datetime2");
@@ -50,6 +56,30 @@ namespace EmailFileService.Migrations
                     b.ToTable("Files");
                 });
 
+            modelBuilder.Entity("EmailFileService.Entities.Keys", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<DateTime>("AddDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Key")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastUpdate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OperationType")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Keys");
+                });
+
             modelBuilder.Entity("EmailFileService.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -61,7 +91,12 @@ namespace EmailFileService.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("KeysId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("LastUpdate")
                         .HasColumnType("datetime2");
@@ -70,9 +105,12 @@ namespace EmailFileService.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("PasswordHash")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("KeysId");
 
                     b.ToTable("Users");
                 });
@@ -88,6 +126,7 @@ namespace EmailFileService.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("DirectoryPath")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("LastUpdate")
@@ -111,6 +150,15 @@ namespace EmailFileService.Migrations
                     b.HasOne("EmailFileService.Entities.UserDirectory", null)
                         .WithMany("Files")
                         .HasForeignKey("UserDirectoryId");
+                });
+
+            modelBuilder.Entity("EmailFileService.Entities.User", b =>
+                {
+                    b.HasOne("EmailFileService.Entities.Keys", "Keys")
+                        .WithMany()
+                        .HasForeignKey("KeysId");
+
+                    b.Navigation("Keys");
                 });
 
             modelBuilder.Entity("EmailFileService.Entities.UserDirectory", b =>

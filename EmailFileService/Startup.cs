@@ -18,6 +18,7 @@ using EmailFileService.Services;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -58,7 +59,7 @@ namespace EmailFileService
                         new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authenticationSettings.JwtIssuer))
                 };
             });
-
+            services.Configure<FormOptions>(options => options.MemoryBufferThreshold = Int32.MaxValue);
             services.AddScoped<IFileEncryptDecryptService, FileEncryptDecryptService>();
             services.AddAutoMapper(this.GetType().Assembly);
             services.AddSingleton(authenticationSettings);

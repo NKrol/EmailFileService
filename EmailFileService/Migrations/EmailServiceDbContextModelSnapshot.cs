@@ -29,6 +29,12 @@ namespace EmailFileService.Migrations
                     b.Property<DateTime>("AddDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FileType")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("LastUpdate")
                         .HasColumnType("datetime2");
 

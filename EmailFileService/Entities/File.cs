@@ -9,6 +9,7 @@ namespace EmailFileService.Entities
     public class File : EntityBase
     {
         public string NameOfFile { get; set; }
-        
+        public string FileType { get; set; }
+        public long FileSize { get; set; }
     }
 }

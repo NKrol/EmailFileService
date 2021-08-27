@@ -68,7 +68,7 @@ namespace EmailFileService.Services
                 }
             };
             var passwordHash = _hasher.HashPassword(newUser, dto.Password);
-            
+
             newUser.PasswordHash = passwordHash;
 
             Directory.CreateDirectory($"{GetDirectoryToSaveUsersFiles()}{mainDirectory}");
@@ -87,15 +87,17 @@ namespace EmailFileService.Services
                 var directoryWithUser = $"{GetDirectoryToSaveUsersFiles()}{mainDirectory}/";
 
                 var fileName = file.FileName;
+                var contentType = file.ContentType;
+                var fileSize = file.Length;
                 int result;
                 if (email.Title is not null)
                 {
-                    result = AddFileToDb(email.Sender, email.Title, fileName, out var fullPath);
+                    result = AddFileToDb(email.Sender, email.Title, fileName, contentType, fileSize, out var fullPath);
                     directoryWithUser += fullPath;
                 }
                 else
                 {
-                    result = AddFileToDb(email.Sender, "", fileName, out var fullPath);
+                    result = AddFileToDb(email.Sender, "", fileName, contentType, fileSize, out var fullPath);
                     directoryWithUser += fullPath;
                 }
 
@@ -106,7 +108,7 @@ namespace EmailFileService.Services
                     file.CopyTo(writer);
                 }
 
-                string nameOfCode = result switch
+                var nameOfCode = result switch
                 {
                     -1 => "You have This file in this Directory",
                     1 => "Save to Db was successful",
@@ -186,26 +188,26 @@ namespace EmailFileService.Services
             var user = _dbContext.Users
                 .Include(c => c.Directories)
                 .ThenInclude(c => c.Files)
-                .FirstOrDefault(d => d.Id == userId);
+                .Single(d => d.Id == userId);
 
             if (user is null) throw new NotFoundException("");
 
-            var userDirectories = user.Directories.ToList();
-            var userFiles = userDirectories.SelectMany(f => f.Files).FirstOrDefault(f => f.NameOfFile == fileName);
+           var userDirectories = user.Directories.ToList();
+            var userFile = userDirectories.SelectMany(f => f.Files).FirstOrDefault(f => f.NameOfFile == fileName);
 
-            var cos = userDirectories.FirstOrDefault(f => f.Files.Contains(userFiles));
+            var cos = userDirectories.FirstOrDefault(f => f.Files.Contains(userFile));
 
-            if (userFiles is null) throw new NotFoundException("Login user don't have this file!");
+            if (userFile is null) throw new NotFoundException("Login user don't have this file!");
 
             var fullPath = $"{mainDirectory}{userDirectory}/{cos.DirectoryPath}/{fileName}";
 
-            var ex = Path.GetExtension(fullPath).ToLowerInvariant();
+            //var ex = Path.GetExtension(fullPath).ToLowerInvariant();
 
             _encrypt.FileDecrypt(fullPath);
 
             return new DownloadFileDto()
             {
-                ExtensionFile = GetTypeOfFile()[ex],
+                ExtensionFile = userFile.FileType,
                 PathToFile = fullPath
             };
         }
@@ -242,7 +244,7 @@ namespace EmailFileService.Services
             };
         }
 
-        private static readonly Random random = new Random();
+        private static readonly Random random = new();
 
         private static string GenerateKey()
         {
@@ -251,7 +253,7 @@ namespace EmailFileService.Services
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        private int AddFileToDb(string email, string? dictionaryName, string fileName, out string fullPath)
+        private int AddFileToDb(string email, string? dictionaryName, string fileName, string contentType, long fileSize, out string fullPath)
         {
             var user = _dbContext.Users
                 .Include(u => u.Directories)
@@ -263,12 +265,12 @@ namespace EmailFileService.Services
 
             var dictionary = user?.Directories.ToList();
 
-            if (dictionaryName.Length > 0)
+            if (dictionaryName?.Length > 0)
             {
-                var result = AddFileToDirectory(ref dictionary, dictionaryName, fileName);
+                var result = AddFileToDirectory(ref dictionary, dictionaryName, fileName, contentType, fileSize);
                 if (result < 0)
                 {
-                    fullPath = $"{dictionaryName}/{fileName}";
+                    fullPath = $"{dictionaryName}/{fileName}{contentType}";
                     return result;
                 }
                 fullPath = $"{dictionaryName}/{fileName}";
@@ -279,10 +281,10 @@ namespace EmailFileService.Services
             else
             {
                 var mainDirectory = dictionary.FirstOrDefault(d => d.DirectoryPath == _userServiceAccessor.GetMainDirectory);
-                var result = AddFileToDirectory(ref mainDirectory, _userServiceAccessor.GetMainDirectory, fileName);
+                var result = AddFileToDirectory(ref mainDirectory, fileName, contentType, fileSize);
                 if (result < 0)
                 {
-                    fullPath = $"{dictionaryName}/{fileName}";
+                    fullPath = $"{dictionaryName}/{fileName}{contentType}";
                     return result;
                 }
                 user.Directories = dictionary;
@@ -292,70 +294,81 @@ namespace EmailFileService.Services
             }
         }
 
-        private static int AddFileToDirectory(ref List<UserDirectory> userDirectory, string dictionary, string nameOfFile) // Dodawanie do nie istniejącego UserDirectory
+        private static int AddFileToDirectory(ref List<UserDirectory> userDirectory, string dictionary, string nameOfFile, string contentType, long fileSize) // Dodawanie do nie istniejącego UserDirectory
         {
-            var checkIfThisFileExist = UserHaveThisFileInThisDirectory(userDirectory, dictionary, file: nameOfFile);
+            var checkIfThisFileExist = UserHaveThisFileInThisDirectory(userDirectory, dictionary, file: nameOfFile, contentType);
             var thisDictionary = userDirectory.FirstOrDefault(d => d.DirectoryPath == dictionary);
             if (thisDictionary is null)
             {
                 CreateUserDirectory(ref userDirectory, dictionary);
             }
             var newDirectory = userDirectory.FirstOrDefault(d => d.DirectoryPath == dictionary);
-            if (checkIfThisFileExist is false)
+            if (checkIfThisFileExist is true)
+            {
+                newDirectory.Files.FirstOrDefault(f => f.NameOfFile == nameOfFile).LastUpdate = DateTime.Now;
+                newDirectory.Files.FirstOrDefault(f => f.NameOfFile == nameOfFile).OperationType =
+                    OperationType.Modify;
+                userDirectory?.Append(newDirectory).ToList();
+
+
+                return 2;
+            }
+            else
             {
                 var newFile = newDirectory?.Files.Append(new Entities.File()
                 {
-                    NameOfFile = nameOfFile
+                    NameOfFile = nameOfFile,
+                    FileSize = fileSize,
+                    FileType = contentType
                 }).ToList();
                 newDirectory.Files = newFile;
                 userDirectory.Append(newDirectory).ToList();
                 return 1;
             }
-            else
-            {
-                newDirectory.Files.FirstOrDefault(f => f.NameOfFile == nameOfFile).LastUpdate = DateTime.Now;
-                newDirectory.Files.FirstOrDefault(f => f.NameOfFile == nameOfFile).OperationType = OperationType.Modify;
-                userDirectory?.Append(newDirectory).ToList();
-                return 2;
-            }
         }
 
         private static void CreateUserDirectory(ref List<UserDirectory> userDirectory, string dictionary)
         {
-            var newDictionary = new UserDirectory() {DirectoryPath = dictionary, Files = new List<Entities.File>()};
-            var newListDirectory = userDirectory.Append(newDictionary).ToList();  
+            var newDictionary = new UserDirectory() { DirectoryPath = dictionary, Files = new List<Entities.File>() };
+            var newListDirectory = userDirectory.Append(newDictionary).ToList();
             userDirectory = newListDirectory;
         }
 
-        private static int AddFileToDirectory(ref UserDirectory userDirectory, string dictionary, string nameOfFile)
+        private static int AddFileToDirectory(ref UserDirectory userDirectory, string nameOfFile, string contentType, long fileSize)
         {
-            var cos = UserHaveThisFileInThisDirectory(userDirectory, file: nameOfFile);
-            var toSave = userDirectory.Files.Append(new Entities.File() { NameOfFile = nameOfFile }).ToList();
+            var cos = UserHaveThisFileInThisDirectory(userDirectory, file: nameOfFile, contentType);
+
             if (cos is false)
             {
+                var toSave = userDirectory.Files
+                            .Append(new Entities.File() { NameOfFile = nameOfFile, FileType = contentType, FileSize = fileSize })
+                            .ToList();
+
                 userDirectory.Files = toSave;
             }
             else
             {
+                userDirectory.Files.FirstOrDefault(f => f.NameOfFile == nameOfFile).FileSize = fileSize;
+
                 userDirectory.Files.FirstOrDefault(f => f.NameOfFile == nameOfFile).OperationType =
                     OperationType.Modify;
 
                 userDirectory.Files.FirstOrDefault(f => f.NameOfFile == nameOfFile).LastUpdate = DateTime.Now;
             }
-            
+
             return 1;
         }
 
-        private static bool? UserHaveThisFileInThisDirectory(List<UserDirectory> userDirectory,string dictionary, string file)
+        private static bool? UserHaveThisFileInThisDirectory(List<UserDirectory> userDirectory, string dictionary, string file, string contentType)
         {
-            var haveThisFile = userDirectory?.FirstOrDefault(d => d.DirectoryPath == dictionary)?.Files.Any(f => f.NameOfFile == file);
+            var haveThisFile = userDirectory?.FirstOrDefault(d => d.DirectoryPath == dictionary)?.Files.Any(f => f.NameOfFile == file & f.FileType == contentType);
 
             return haveThisFile;
         }
 
-        private static bool? UserHaveThisFileInThisDirectory(UserDirectory userDirectory, string file)
+        private static bool? UserHaveThisFileInThisDirectory(UserDirectory userDirectory, string file, string contentType)
         {
-            var haveThisFile = userDirectory?.Files.Any(f => f.NameOfFile == file);
+            var haveThisFile = userDirectory?.Files.Any(f => f.NameOfFile == file & f.FileType == contentType);
 
             return haveThisFile;
         }
