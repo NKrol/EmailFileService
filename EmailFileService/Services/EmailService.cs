@@ -24,7 +24,8 @@ namespace EmailFileService.Services
         string SendEmail(Email email, IFormFile file);
         string Login(LoginDto dto);
         IEnumerable<ShowMyFilesDto> GetMyFiles();
-        DownloadFileDto DownloadFile(string fileName);
+   //     DownloadFileDto DownloadFile(string fileName);
+        DownloadFileDto DownloadFileFromDirectory(string? directory, string fileName);
     }
 
     public class EmailService : IEmailService
@@ -179,7 +180,7 @@ namespace EmailFileService.Services
 
             return userFilesDto;
         }
-
+        /*
         public DownloadFileDto DownloadFile(string fileName)
         {
             var mainDirectory = GetDirectoryToSaveUsersFiles();
@@ -211,6 +212,34 @@ namespace EmailFileService.Services
                 PathToFile = fullPath
             };
         }
+        */
+        public DownloadFileDto DownloadFileFromDirectory(string? directory, string fileName)
+        {
+            var userFiles = GetDirectoryToSaveUsersFiles();
+            var mainDirectoryUser = _userServiceAccessor.GetMainDirectory + "/";
+            var userId = _userServiceAccessor.GetId;
+            var forMomentString = directory;
+            if (string.IsNullOrEmpty(directory))
+            {
+                forMomentString = mainDirectoryUser;
+            }
+            var query = _dbContext.Users
+                .Include(u => u.Directories.Where(d => d.DirectoryPath == forMomentString))
+                .ThenInclude(d => d.Files.Where(f => f.NameOfFile == fileName))
+                .Single(u => u.Id == userId);
+
+            if (query is null) throw new NotFoundException("User don't have file in this direction");
+
+            var fullPath = userFiles + mainDirectoryUser + directory + fileName;
+
+            _encrypt.FileDecrypt(fullPath);
+
+            return new DownloadFileDto()
+            {
+                ExtensionFile = query.Directories.Single(d => d.DirectoryPath == forMomentString).Files.Single(f => f.NameOfFile == fileName).FileType,
+                PathToFile = fullPath
+            };
+        }
 
         private static string GeneratePath(string email)
         {
@@ -225,7 +254,7 @@ namespace EmailFileService.Services
         }
 
         private string GetDirectoryToSaveUsersFiles() => Directory.GetCurrentDirectory() + "/UserDirectory/";
-
+        /*
         private Dictionary<string, string> GetTypeOfFile()
         {
             return new Dictionary<string, string>
@@ -243,7 +272,7 @@ namespace EmailFileService.Services
                 {".csv", "text/csv"},
             };
         }
-
+        */
         private static readonly Random random = new();
 
         private static string GenerateKey()

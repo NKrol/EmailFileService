@@ -30,11 +30,12 @@ namespace EmailFileService.Controllers
         }
 
         [HttpPost]
+        [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
         [Route("send")]
         [Authorize]
-        public ActionResult SendEmail([FromForm]Email email, [FromForm]IFormFile file)
+        public ActionResult SendEmail([FromForm] Email email, [FromForm] IFormFile file)
         {
-            
+
             var result = _emailService.SendEmail(email, file);
 
 
@@ -72,6 +73,9 @@ namespace EmailFileService.Controllers
             return Ok(token);
         }
 
+        /*// Cała metoda do zmiany musi być oddzielny controller do folderów i do plików 
+        
+
         [HttpGet]
         [Route("downloadFile")]
         [Authorize]
@@ -87,9 +91,31 @@ namespace EmailFileService.Controllers
 
             System.IO.File.Delete(downloadFileDto.PathToFile);
             memory.Position = 0;
-                
+
             return File(memory, downloadFileDto.ExtensionFile, fileName);
 
+        } */
+
+
+        [HttpGet]
+        [Route("download")]
+        public async Task<IActionResult> Download([FromQuery] string? directory, [FromQuery] string fileName)
+        {
+            var downloadFileDto = _emailService.DownloadFileFromDirectory(directory, fileName);
+
+            var memory = new MemoryStream();
+            await using (var stream = new FileStream(downloadFileDto.PathToFile, FileMode.Open))
+            {
+                await stream.CopyToAsync(memory);
+                stream.Close();
+            }
+
+            System.IO.File.Delete(downloadFileDto.PathToFile);
+            memory.Position = 0;
+
+            
+
+            return File(memory, downloadFileDto.ExtensionFile, fileName);
         }
     }
 }
