@@ -120,7 +120,7 @@ namespace EmailFileService.Services
 
         private string GetUserKey()
         {
-            var id = _userServiceAccessor.GetId;
+           var id = _userServiceAccessor.GetId;
 
             var user = _context.Users
                 .Include(u => u.Keys)

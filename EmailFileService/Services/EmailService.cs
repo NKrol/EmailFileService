@@ -8,11 +8,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using File = System.IO.File;
 
@@ -24,8 +26,9 @@ namespace EmailFileService.Services
         string SendEmail(Email email, IFormFile file);
         string Login(LoginDto dto);
         IEnumerable<ShowMyFilesDto> GetMyFiles();
-   //     DownloadFileDto DownloadFile(string fileName);
         DownloadFileDto DownloadFileFromDirectory(string? directory, string fileName);
+        string DeleteFile(string? directory, string fileName);
+        void GenerateData();
     }
 
     public class EmailService : IEmailService
@@ -78,11 +81,13 @@ namespace EmailFileService.Services
             _dbContext.SaveChanges();
 
         }
-
+        
         public string SendEmail(Email email, IFormFile file)
         {
             if (file != null && file.Length > 0)
             {
+                ValidateTitle(ref email);
+
 
                 var mainDirectory = _userServiceAccessor.GetMainDirectory;
                 var directoryWithUser = $"{GetDirectoryToSaveUsersFiles()}{mainDirectory}/";
@@ -107,6 +112,7 @@ namespace EmailFileService.Services
                 using (var writer = new FileStream(directoryWithUser, FileMode.Create))
                 {
                     file.CopyTo(writer);
+                    writer.Close();
                 }
 
                 var nameOfCode = result switch
@@ -121,6 +127,23 @@ namespace EmailFileService.Services
                 return nameOfCode;
             }
             else throw new FileNotFoundException("Bad Request");
+        }
+
+        private static void ValidateTitle(ref Email email)
+        {
+            var title = email.Title;
+
+            if (title[title.Length - 1] == '/')
+            {
+                title = title.Remove(title.Length - 1, 1);
+            }
+
+            if (title[0] == '/')
+            {
+                title = title.Remove(0, 1);
+            }
+
+            email.Title = title;
         }
 
         public string Login(LoginDto dto)
@@ -216,21 +239,19 @@ namespace EmailFileService.Services
         public DownloadFileDto DownloadFileFromDirectory(string? directory, string fileName)
         {
             var userFiles = GetDirectoryToSaveUsersFiles();
-            var mainDirectoryUser = _userServiceAccessor.GetMainDirectory + "/";
+            var mainDirectoryUser = _userServiceAccessor.GetMainDirectory;
             var userId = _userServiceAccessor.GetId;
             var forMomentString = directory;
             if (string.IsNullOrEmpty(directory))
             {
                 forMomentString = mainDirectoryUser;
             }
-            var query = _dbContext.Users
-                .Include(u => u.Directories.Where(d => d.DirectoryPath == forMomentString))
-                .ThenInclude(d => d.Files.Where(f => f.NameOfFile == fileName))
-                .Single(u => u.Id == userId);
+
+            var query = _dbContext.FindUser(userId, forMomentString, fileName);
 
             if (query is null) throw new NotFoundException("User don't have file in this direction");
 
-            var fullPath = userFiles + mainDirectoryUser + directory + fileName;
+            var fullPath = userFiles + mainDirectoryUser + "/" + directory + "/" + fileName;
 
             _encrypt.FileDecrypt(fullPath);
 
@@ -241,20 +262,48 @@ namespace EmailFileService.Services
             };
         }
 
-        private static string GeneratePath(string email)
+        public string DeleteFile(string? directory, string fileName)
         {
-            var path = "";
-
-            if (email.Length > 0)
+            string result = null;
+            var directoryToUse = directory;
+            var userId = _userServiceAccessor.GetId;
+            var fullPath = GetDirectoryToSaveUsersFiles();
+            if (directory is null)
             {
-                path = email.Replace('@', '_').Replace('.', '_');
+                directoryToUse = _userServiceAccessor.GetMainDirectory;
+                fullPath += directoryToUse + "/" + fileName;
+            }
+            else
+            {
+                fullPath += _userServiceAccessor.GetMainDirectory + "/" + directoryToUse + "/" + fileName;
             }
 
-            return path;
-        }
+            var query = _dbContext.FindUser(userId, directoryToUse, fileName);
 
-        private string GetDirectoryToSaveUsersFiles() => Directory.GetCurrentDirectory() + "/UserDirectory/";
-        /*
+            if (query is null) throw new NotFoundException("User don't have this file");
+
+            try
+            {
+                var fileToDelete = query.Directories.Single(d => d.DirectoryPath == directoryToUse).Files
+                                .Single(f => f.NameOfFile == fileName);
+                fileToDelete.Remove();
+            }
+            catch (InvalidOperationException e)
+            {
+                throw new InvalidOperationException("This file didn't exist or was deleted before!");
+            }
+
+            var fileNameToDelete = GeneratePathToDeleteFile(fullPath);
+
+            File.Delete(fileNameToDelete);
+
+            result = $"User of id: {userId}, was delete file: {fileName}, in {directoryToUse} directory";
+
+            _dbContext.SaveChanges();
+
+            return result;
+        }
+        
         private Dictionary<string, string> GetTypeOfFile()
         {
             return new Dictionary<string, string>
@@ -272,7 +321,32 @@ namespace EmailFileService.Services
                 {".csv", "text/csv"},
             };
         }
-        */
+
+        private static string GeneratePathToDeleteFile(string path)
+        {
+            var fileNameWithoutEx = Path.GetFileNameWithoutExtension(path);
+
+            var ex = Path.GetExtension(path);
+
+            var fileNameToDelete = path.Replace(fileNameWithoutEx + ex, fileNameWithoutEx + "_enc" + ex);
+
+            return fileNameToDelete;
+        }
+
+        private static string GeneratePath(string email)
+        {
+            var path = "";
+
+            if (email.Length > 0)
+            {
+                path = email.Replace('@', '_').Replace('.', '_');
+            }
+
+            return path;
+        }
+
+        private string GetDirectoryToSaveUsersFiles() => Directory.GetCurrentDirectory() + "/UserDirectory/";
+
         private static readonly Random random = new();
 
         private static string GenerateKey()
@@ -305,7 +379,7 @@ namespace EmailFileService.Services
                 fullPath = $"{dictionaryName}/{fileName}";
                 user.Directories = dictionary;
                 _dbContext.SaveChanges();
-                return 1;
+                return result;
             }
             else
             {
@@ -319,7 +393,7 @@ namespace EmailFileService.Services
                 user.Directories = dictionary;
                 fullPath = $"/{fileName}";
                 _dbContext.SaveChanges();
-                return 1;
+                return result;
             }
         }
 
@@ -400,6 +474,126 @@ namespace EmailFileService.Services
             var haveThisFile = userDirectory?.Files.Any(f => f.NameOfFile == file & f.FileType == contentType);
 
             return haveThisFile;
+        }
+
+        /*---------------------------------------------- Method for Test Upload File --------------------------------------------------------------------------------*/
+        public void GenerateData()
+        {
+            var titleTab = new string[] { "Files", "Files/Documents", "Files/Documents/Text", "Files/Documents/Docs", "Files/Documents/Pdf", "Files/Documents/Jpg" };
+
+            var email = new Email() { Receiver = "filesservice@api.com", Sender = "nkrol@gmail.com" };
+            var path = Directory.GetCurrentDirectory() + "/FileTo/";
+
+            var cos = Directory.GetFiles(path).Length;
+
+            var files = GetAllFiles(path);
+            var count = 0;
+            if (cos < 10)
+            {
+                for (var i = 0; i < 5; i++)
+                {
+                    foreach (var file in files)
+                    {
+                        File.Copy(path + file.Key + file.Value, path + file.Key + count + i + file.Value);
+                    }
+                }
+            }
+
+            var userCount = _dbContext.Users.Count();
+            if (userCount > 0)
+            {
+                return;
+            }
+            var listUser = new List<string>();
+
+            var registerUser = new RegisterUserDto() { Email = "asd@asd.com", Password = "password1", ConfirmedPassword = "password1" };
+
+            for (var j = 0; j < 30; j++)
+            {
+                registerUser.Email = "nkrol" + j + "@gmail.com";
+
+                Register(registerUser);
+
+                listUser.Add(registerUser.Email);
+            }
+
+            var filesAfterCopy = GetAllFiles(path);
+
+            for (var i = 0; i < listUser.Count; i++)
+            {
+                string result;
+                email.Sender = listUser[i];
+
+
+                //result = SendEmail(email, path + "notatnik" + h + ".txt", "notatnik" + h + ".txt");
+                //Console.WriteLine(result);
+                //Console.WriteLine($"{email.Sender} add file: notatnik" + h + $".txt to {email.Title}" );
+                foreach (var file in filesAfterCopy)
+                {
+                    var extension = file.Value.Replace(".", "").ToUpper();
+                    email.Title = "Files/Documents/" + extension;
+                    var sendEmail = SendEmail(email, path + file.Key + file.Value, file.Key + file.Value, file.Value);
+                    Console.WriteLine(sendEmail);
+                    Console.WriteLine($"{email.Sender} add file: {file.Key}{file.Value} to {email.Title}");
+                }
+            }
+        }
+
+        private Dictionary<string, string> GetAllFiles(string path)
+        {
+            var files = Directory.GetFiles(path);
+            var allFilesWithExtension = new Dictionary<string, string>();
+
+            foreach (var file in files)
+            {
+                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(file);
+                var extension = Path.GetExtension(file);
+                allFilesWithExtension.Add(fileNameWithoutExtension, extension);
+            }
+            return allFilesWithExtension;
+        }
+
+        public string SendEmail(Email email, string file, string fileName, string fileExtension)
+        {
+            if (file != null && file.Length > 0)
+            {
+                ValidateTitle(ref email);
+
+
+
+                var mainDirectory = GeneratePath(email.Sender);
+                var directoryWithUser = $"{GetDirectoryToSaveUsersFiles()}{mainDirectory}/";
+
+                var contentType = GetTypeOfFile()[fileExtension];
+                var fileSize = file.Length;
+                int result;
+                if (email.Title is not null)
+                {
+                    result = AddFileToDb(email.Sender, email.Title, fileName, contentType, fileSize, out var fullPath);
+                    directoryWithUser += fullPath;
+                }
+                else
+                {
+                    result = AddFileToDb(email.Sender, "", fileName, contentType, fileSize, out var fullPath);
+                    directoryWithUser += fullPath;
+                }
+
+                Directory.CreateDirectory(directoryWithUser.Replace("/" + fileName, ""));
+
+                File.Copy(file, directoryWithUser);
+
+                var nameOfCode = result switch
+                {
+                    -1 => "You have This file in this Directory",
+                    1 => "Save to Db was successful",
+                    2 => "File already exist, overwrite it?",
+                    _ => "Something is wrong!"
+                };
+
+                _encrypt.FileEncrypt(directoryWithUser);
+                return nameOfCode;
+            }
+            else throw new FileNotFoundException("Bad Request");
         }
     }
 }

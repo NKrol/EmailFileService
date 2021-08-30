@@ -5,8 +5,10 @@ using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using EmailFileService.Entities;
 using EmailFileService.Exception;
 using EmailFileService.Model;
 using EmailFileService.Services;
@@ -35,7 +37,6 @@ namespace EmailFileService.Controllers
         [Authorize]
         public ActionResult SendEmail([FromForm] Email email, [FromForm] IFormFile file)
         {
-
             var result = _emailService.SendEmail(email, file);
 
 
@@ -99,11 +100,13 @@ namespace EmailFileService.Controllers
 
         [HttpGet]
         [Route("download")]
+        [Authorize]
         public async Task<IActionResult> Download([FromQuery] string? directory, [FromQuery] string fileName)
         {
             var downloadFileDto = _emailService.DownloadFileFromDirectory(directory, fileName);
 
             var memory = new MemoryStream();
+
             await using (var stream = new FileStream(downloadFileDto.PathToFile, FileMode.Open))
             {
                 await stream.CopyToAsync(memory);
@@ -112,10 +115,32 @@ namespace EmailFileService.Controllers
 
             System.IO.File.Delete(downloadFileDto.PathToFile);
             memory.Position = 0;
-
             
-
             return File(memory, downloadFileDto.ExtensionFile, fileName);
         }
+
+        [HttpDelete]
+        [Route("deleteFile")]
+        [Authorize]
+        public ActionResult DeleteFile([FromQuery] string? directory, [FromQuery] string fileName)
+        {
+            var result = _emailService.DeleteFile(directory, fileName);
+
+            return Ok(result);
+        }
+
+
+
+        /* Method for test upload File and create account
+        [HttpPost]
+        [Route("generateData")]
+        [Authorize]
+        public ActionResult Generate()
+        {
+            _emailService.GenerateData();
+
+            return Ok();
+        }
+        */
     }
 }

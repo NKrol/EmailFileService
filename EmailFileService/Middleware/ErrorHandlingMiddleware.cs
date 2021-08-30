@@ -36,6 +36,11 @@ namespace EmailFileService.Middleware
                 context.Response.StatusCode = 404;
                 await context.Response.WriteAsync(e.Message);
             }
+            catch (InvalidOperationException e)
+            {
+                context.Response.StatusCode = 404;
+                await context.Response.WriteAsync(e.Message);
+            }
             catch (System.Exception e)
             {
                 context.Response.StatusCode = 500;

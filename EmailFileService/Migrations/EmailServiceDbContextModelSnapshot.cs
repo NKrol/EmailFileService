@@ -35,6 +35,9 @@ namespace EmailFileService.Migrations
                     b.Property<string>("FileType")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("LastUpdate")
                         .HasColumnType("datetime2");
 
@@ -64,6 +67,9 @@ namespace EmailFileService.Migrations
                     b.Property<DateTime>("AddDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Key")
                         .HasColumnType("nvarchar(max)");
 
@@ -92,6 +98,9 @@ namespace EmailFileService.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<int?>("KeysId")
                         .HasColumnType("int");
@@ -126,6 +135,9 @@ namespace EmailFileService.Migrations
                     b.Property<string>("DirectoryPath")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("LastUpdate")
                         .HasColumnType("datetime2");

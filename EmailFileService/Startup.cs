@@ -59,7 +59,12 @@ namespace EmailFileService
                         new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authenticationSettings.JwtIssuer))
                 };
             });
-            services.Configure<FormOptions>(options => options.MemoryBufferThreshold = Int32.MaxValue);
+            services.Configure<FormOptions>(x =>
+            {
+                x.ValueLengthLimit = int.MaxValue;
+                x.MultipartBodyLengthLimit = int.MaxValue;
+                x.MultipartHeadersLengthLimit = int.MaxValue;
+            });
             services.AddScoped<IFileEncryptDecryptService, FileEncryptDecryptService>();
             services.AddAutoMapper(this.GetType().Assembly);
             services.AddSingleton(authenticationSettings);
@@ -70,8 +75,8 @@ namespace EmailFileService
             services.AddRazorPages();
             services.AddDbContext<EmailServiceDbContext>(options =>
                 options
-                    .LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Command.Name }, LogLevel.Information)
-                    .EnableSensitiveDataLogging()
+                    //.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Command.Name }, LogLevel.Information)
+                    //.EnableSensitiveDataLogging()
                     .UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             services.AddScoped<IValidator<RegisterUserDto>, RegisterValidator>();
             services.AddScoped<IValidator<Email>, EmailSendValidator>();

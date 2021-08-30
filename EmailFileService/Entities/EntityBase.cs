@@ -13,10 +13,11 @@ namespace EmailFileService.Entities
         public DateTime AddDate { get; private set; } = DateTime.Now;
         public DateTime? LastUpdate { get; set; }
         public OperationType OperationType { get; set; } = OperationType.Create;
-
+        public bool IsActive { get; set; } = true;
 
         public void Remove()
         {
+            IsActive = false;
             LastUpdate = DateTime.Now;
             OperationType = OperationType.Delete;
         }

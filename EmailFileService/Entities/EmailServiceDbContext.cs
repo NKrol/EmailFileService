@@ -39,5 +39,17 @@ namespace EmailFileService.Entities
                 .IsRequired();
 
         }
+
+        public User FindUser(int? userId, string directory, string fileName)
+        {
+            var query = Users.Include(u => u.Directories.Where(x => x.DirectoryPath == directory))
+                .ThenInclude(d => d.Files.Where(x =>
+                    x.NameOfFile == fileName & x.IsActive == true & x.OperationType == OperationType.Create |
+                    x.OperationType == OperationType.Modify))
+                .AsSingleQuery()
+                .Single(u => u.Id == userId);
+
+            return query;
+        }
     }
 }
