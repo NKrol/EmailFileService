@@ -16,72 +16,35 @@ using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Logging;
+using NLog;
 using File = System.IO.File;
 
 namespace EmailFileService.Services
 {
     public interface IEmailService
     {
-        void Register(RegisterUserDto dto);
         string SendEmail(Email email, IFormFile file);
-        string Login(LoginDto dto);
-        IEnumerable<ShowMyFilesDto> GetMyFiles();
-        DownloadFileDto DownloadFileFromDirectory(string? directory, string fileName);
-        string DeleteFile(string? directory, string fileName);
-        void GenerateData();
+        //void GenerateData(); -- test only
     }
 
     public class EmailService : IEmailService
     {
         private readonly EmailServiceDbContext _dbContext;
-        private readonly IPasswordHasher<User> _hasher;
         private readonly IFileEncryptDecryptService _encrypt;
-        private readonly Authentication _authentication;
-        private readonly IMapper _mapper;
         private readonly IUserServiceAccessor _userServiceAccessor;
+        private readonly ILogger<EmailService> _logger;
 
         public EmailService(EmailServiceDbContext dbContext, IPasswordHasher<User> hasher,
             IFileEncryptDecryptService encrypt, Authentication authentication, IMapper mapper,
-            IUserServiceAccessor userServiceAccessor)
+            IUserServiceAccessor userServiceAccessor, ILogger<EmailService> logger)
         {
             _dbContext = dbContext;
-            _hasher = hasher;
             _encrypt = encrypt;
-            _authentication = authentication;
-            _mapper = mapper;
             _userServiceAccessor = userServiceAccessor;
+            _logger = logger;
         }
 
-        public void Register(RegisterUserDto dto)
-        {
-            var mainDirectory = GeneratePath(dto.Email);
-            var fileKey = GenerateKey();
-            var newUser = new User()
-            {
-                Email = dto.Email,
-                Directories = new List<UserDirectory>()
-                {
-                    new UserDirectory()
-                    {
-                        DirectoryPath = mainDirectory
-                    }
-                },
-                Keys = new Keys()
-                {
-                    Key = fileKey
-                }
-            };
-            var passwordHash = _hasher.HashPassword(newUser, dto.Password);
-
-            newUser.PasswordHash = passwordHash;
-
-            Directory.CreateDirectory($"{GetDirectoryToSaveUsersFiles()}{mainDirectory}");
-
-            _dbContext.Users.Add(newUser);
-            _dbContext.SaveChanges();
-
-        }
-        
         public string SendEmail(Email email, IFormFile file)
         {
             if (file != null && file.Length > 0)
@@ -115,13 +78,30 @@ namespace EmailFileService.Services
                     writer.Close();
                 }
 
-                var nameOfCode = result switch
+                // var nameOfCode = result switch
+                // {
+                //     1 => "Save to Db was successful",
+                //     2 => "File already exist, overwrite it?",
+                //     _ => "Something is wrong!"
+                // };
+
+                string nameOfCode;
+
+                switch (result)
                 {
-                    -1 => "You have This file in this Directory",
-                    1 => "Save to Db was successful",
-                    2 => "File already exist, overwrite it?",
-                    _ => "Something is wrong!"
-                };
+                    case 2:
+                        nameOfCode = "You have This file in this Directory";
+                        _logger.LogInformation($"{email.Sender} was overwrite {fileName} in directory: {email.Title} :: {DateTime.Now}");
+                        break;
+                    case 1:
+                        nameOfCode = "Save to Db was successful";
+                        _logger.LogInformation($"{email.Sender} was successfully added file: {fileName} to {email.Title} :: {DateTime.Now}");
+                        break;
+                    default:
+                        nameOfCode = "";
+                        break;
+                }
+
 
                 _encrypt.FileEncrypt(directoryWithUser);
                 return nameOfCode;
@@ -145,217 +125,9 @@ namespace EmailFileService.Services
 
             email.Title = title;
         }
-
-        public string Login(LoginDto dto)
-        {
-            var user = _dbContext.Users.FirstOrDefault(u => u.Email == dto.Email);
-            if (user is null) throw new ForbidException("Email or password isn't correct!");
-
-            var isCorrect = _hasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
-            if (isCorrect == PasswordVerificationResult.Failed)
-                throw new ForbidException("Email or password isn't correct!");
-
-            var claims = GenerateClaim(user.Email, GeneratePath(dto.Email), user.Id);
-
-            return claims;
-        }
-
-        private string GenerateClaim(string email, string userMainPath, int id)
-        {
-            var claim = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, id.ToString()),
-                new Claim(ClaimTypes.Email, email),
-                new Claim("MainDirectory", userMainPath)
-            };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_authentication.JwtIssuer));
-            var cred = new SigningCredentials(key,
-                SecurityAlgorithms.HmacSha256);
-            var expires = DateTime.Now.AddDays(_authentication.JwtExpire);
-
-            var token = new JwtSecurityToken(_authentication.JwtIssuer,
-                _authentication.JwtIssuer,
-                claim,
-                expires: expires,
-                signingCredentials: cred);
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-
-            return tokenHandler.WriteToken(token);
-        }
-
-        public IEnumerable<ShowMyFilesDto> GetMyFiles()
-        {
-            var userId = _userServiceAccessor.GetId;
-            var files = _dbContext.Users
-                .Where(u => u.Id == userId)
-                .SelectMany(e => e.Directories)
-                .Select(com => new ShowMyFilesDto()
-                {
-                    UserDirectories = com.DirectoryPath,
-                    Files = com.Files.Select(c => c.NameOfFile).AsEnumerable()
-                });
-
-            if (files is null) throw new System.Exception("You don't have any files");
-
-            var userFilesDto = files;
-
-            return userFilesDto;
-        }
-        /*
-        public DownloadFileDto DownloadFile(string fileName)
-        {
-            var mainDirectory = GetDirectoryToSaveUsersFiles();
-            var userDirectory = _userServiceAccessor.GetMainDirectory;
-            var userId = _userServiceAccessor.GetId;
-            var user = _dbContext.Users
-                .Include(c => c.Directories)
-                .ThenInclude(c => c.Files)
-                .Single(d => d.Id == userId);
-
-            if (user is null) throw new NotFoundException("");
-
-           var userDirectories = user.Directories.ToList();
-            var userFile = userDirectories.SelectMany(f => f.Files).FirstOrDefault(f => f.NameOfFile == fileName);
-
-            var cos = userDirectories.FirstOrDefault(f => f.Files.Contains(userFile));
-
-            if (userFile is null) throw new NotFoundException("Login user don't have this file!");
-
-            var fullPath = $"{mainDirectory}{userDirectory}/{cos.DirectoryPath}/{fileName}";
-
-            //var ex = Path.GetExtension(fullPath).ToLowerInvariant();
-
-            _encrypt.FileDecrypt(fullPath);
-
-            return new DownloadFileDto()
-            {
-                ExtensionFile = userFile.FileType,
-                PathToFile = fullPath
-            };
-        }
-        */
-        public DownloadFileDto DownloadFileFromDirectory(string? directory, string fileName)
-        {
-            var userFiles = GetDirectoryToSaveUsersFiles();
-            var mainDirectoryUser = _userServiceAccessor.GetMainDirectory;
-            var userId = _userServiceAccessor.GetId;
-            var forMomentString = directory;
-            if (string.IsNullOrEmpty(directory))
-            {
-                forMomentString = mainDirectoryUser;
-            }
-
-            var query = _dbContext.FindUser(userId, forMomentString, fileName);
-
-            if (query is null) throw new NotFoundException("User don't have file in this direction");
-
-            var fullPath = userFiles + mainDirectoryUser + "/" + directory + "/" + fileName;
-
-            _encrypt.FileDecrypt(fullPath);
-
-            return new DownloadFileDto()
-            {
-                ExtensionFile = query.Directories.Single(d => d.DirectoryPath == forMomentString).Files.Single(f => f.NameOfFile == fileName).FileType,
-                PathToFile = fullPath
-            };
-        }
-
-        public string DeleteFile(string? directory, string fileName)
-        {
-            string result = null;
-            var directoryToUse = directory;
-            var userId = _userServiceAccessor.GetId;
-            var fullPath = GetDirectoryToSaveUsersFiles();
-            if (directory is null)
-            {
-                directoryToUse = _userServiceAccessor.GetMainDirectory;
-                fullPath += directoryToUse + "/" + fileName;
-            }
-            else
-            {
-                fullPath += _userServiceAccessor.GetMainDirectory + "/" + directoryToUse + "/" + fileName;
-            }
-
-            var query = _dbContext.FindUser(userId, directoryToUse, fileName);
-
-            if (query is null) throw new NotFoundException("User don't have this file");
-
-            try
-            {
-                var fileToDelete = query.Directories.Single(d => d.DirectoryPath == directoryToUse).Files
-                                .Single(f => f.NameOfFile == fileName);
-                fileToDelete.Remove();
-            }
-            catch (InvalidOperationException e)
-            {
-                throw new InvalidOperationException("This file didn't exist or was deleted before!");
-            }
-
-            var fileNameToDelete = GeneratePathToDeleteFile(fullPath);
-
-            File.Delete(fileNameToDelete);
-
-            result = $"User of id: {userId}, was delete file: {fileName}, in {directoryToUse} directory";
-
-            _dbContext.SaveChanges();
-
-            return result;
-        }
         
-        private Dictionary<string, string> GetTypeOfFile()
-        {
-            return new Dictionary<string, string>
-            {
-                {".txt", "text/plain"},
-                {".pdf", "application/pdf"},
-                {".doc", "application/vnd.ms-word"},
-                {".docx", "application/vnd.ms-word"},
-                {".xls", "application/vnd.ms-excel"},
-                {".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
-                {".png", "image/png"},
-                {".jpg", "image/jpeg"},
-                {".jpeg", "image/jpeg"},
-                {".gif", "image/gif"},
-                {".csv", "text/csv"},
-            };
-        }
-
-        private static string GeneratePathToDeleteFile(string path)
-        {
-            var fileNameWithoutEx = Path.GetFileNameWithoutExtension(path);
-
-            var ex = Path.GetExtension(path);
-
-            var fileNameToDelete = path.Replace(fileNameWithoutEx + ex, fileNameWithoutEx + "_enc" + ex);
-
-            return fileNameToDelete;
-        }
-
-        private static string GeneratePath(string email)
-        {
-            var path = "";
-
-            if (email.Length > 0)
-            {
-                path = email.Replace('@', '_').Replace('.', '_');
-            }
-
-            return path;
-        }
-
         private string GetDirectoryToSaveUsersFiles() => Directory.GetCurrentDirectory() + "/UserDirectory/";
-
-        private static readonly Random random = new();
-
-        private static string GenerateKey()
-        {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            return new string(Enumerable.Repeat(chars, 32)
-                .Select(s => s[random.Next(s.Length)]).ToArray());
-        }
-
+        
         private int AddFileToDb(string email, string? dictionaryName, string fileName, string contentType, long fileSize, out string fullPath)
         {
             var user = _dbContext.Users
@@ -477,6 +249,27 @@ namespace EmailFileService.Services
         }
 
         /*---------------------------------------------- Method for Test Upload File --------------------------------------------------------------------------------*/
+        /*
+
+        
+        private Dictionary<string, string> GetTypeOfFile()
+        {
+            return new Dictionary<string, string>
+            {
+                {".txt", "text/plain"},
+                {".pdf", "application/pdf"},
+                {".doc", "application/vnd.ms-word"},
+                {".docx", "application/vnd.ms-word"},
+                {".xls", "application/vnd.ms-excel"},
+                {".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
+                {".png", "image/png"},
+                {".jpg", "image/jpeg"},
+                {".jpeg", "image/jpeg"},
+                {".gif", "image/gif"},
+                {".csv", "text/csv"},
+            };
+        }
+
         public void GenerateData()
         {
             var titleTab = new string[] { "Files", "Files/Documents", "Files/Documents/Text", "Files/Documents/Docs", "Files/Documents/Pdf", "Files/Documents/Jpg" };
@@ -508,7 +301,7 @@ namespace EmailFileService.Services
 
             var registerUser = new RegisterUserDto() { Email = "asd@asd.com", Password = "password1", ConfirmedPassword = "password1" };
 
-            for (var j = 0; j < 30; j++)
+            for (var j = 0; j < 10; j++)
             {
                 registerUser.Email = "nkrol" + j + "@gmail.com";
 
@@ -582,18 +375,28 @@ namespace EmailFileService.Services
 
                 File.Copy(file, directoryWithUser);
 
-                var nameOfCode = result switch
-                {
-                    -1 => "You have This file in this Directory",
-                    1 => "Save to Db was successful",
-                    2 => "File already exist, overwrite it?",
-                    _ => "Something is wrong!"
-                };
+                var nameOfCode = "";
 
-                _encrypt.FileEncrypt(directoryWithUser);
+                switch (result)
+                {
+                    case 2:
+                        nameOfCode = "You have This file in this Directory";
+                        _logger.LogInformation($"{email.Sender} was overwrite {fileName} in directory: {email.Title} :: {DateTime.Now}");
+                        break;
+                    case 1:
+                        nameOfCode = "Save to Db was successful";
+                        _logger.LogInformation($"{email.Sender} was successfully added file: {fileName} to {email.Title} :: {DateTime.Now}");
+                        break;
+                    default:
+                        nameOfCode = "";
+                        break;
+                }
+
+                _encrypt.FileEncrypt(email.Sender, directoryWithUser);
                 return nameOfCode;
             }
             else throw new FileNotFoundException("Bad Request");
         }
+        */
     }
 }

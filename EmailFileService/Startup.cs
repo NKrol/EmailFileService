@@ -69,7 +69,10 @@ namespace EmailFileService
             services.AddAutoMapper(this.GetType().Assembly);
             services.AddSingleton(authenticationSettings);
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IUserServiceAccessor, UserServiceAccessor>();
+            services.AddScoped<IFileService, FileService>();
+            services.AddScoped<RequestTimeMiddleware>();
             services.AddScoped<ErrorHandlingMiddleware>();
             services.AddControllers().AddFluentValidation();
             services.AddRazorPages();
@@ -101,6 +104,7 @@ namespace EmailFileService
             }
 
             app.UseAuthentication();
+            app.UseMiddleware<RequestTimeMiddleware>();
             app.UseMiddleware<ErrorHandlingMiddleware>();
             app.UseHttpsRedirection();
 

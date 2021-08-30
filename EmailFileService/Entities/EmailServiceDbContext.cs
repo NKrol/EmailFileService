@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EmailFileService.Exception;
 using Microsoft.EntityFrameworkCore;
 
 namespace EmailFileService.Entities
@@ -49,6 +50,12 @@ namespace EmailFileService.Entities
                 .AsSingleQuery()
                 .Single(u => u.Id == userId);
 
+            var fileExist = query.Directories.FirstOrDefault(d => d.DirectoryPath == directory).Files
+                .Any(x => x.NameOfFile == fileName & x.IsActive == true & x.OperationType == OperationType.Create |
+                          x.OperationType == OperationType.Modify);
+
+            if (!fileExist) throw new NotFoundException("This file not exist!");
+            
             return query;
         }
     }

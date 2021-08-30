@@ -32,7 +32,7 @@ namespace EmailFileService.Controllers
         }
 
         [HttpPost]
-        [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = int.MaxValue)]
+        [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = long.MaxValue)]
         [Route("send")]
         [Authorize]
         public ActionResult SendEmail([FromForm] Email email, [FromForm] IFormFile file)
@@ -42,96 +42,9 @@ namespace EmailFileService.Controllers
 
             return Ok(result);
         }
-        [HttpGet]
-        [Route("getMyFiles")]
-        [Authorize]
-        public ActionResult<IEnumerable<ShowMyFilesDto>> GetMyFiles()
-        {
-            var myFiles = _emailService.GetMyFiles();
 
-            return Ok(myFiles);
-        }
-
-        [HttpPost]
-        [Route("register")]
-        public ActionResult Register([FromBody] RegisterUserDto dto)
-        {
-            if (!ModelState.IsValid)
-            {
-                throw new CreatedAccountException("");
-            }
-            _emailService.Register(dto);
-
-            return Ok();
-        }
-
-        [HttpPost]
-        [Route("login")]
-        public ActionResult Login([FromBody] LoginDto dto)
-        {
-            var token = _emailService.Login(dto);
-
-            return Ok(token);
-        }
-
-        /*// Cała metoda do zmiany musi być oddzielny controller do folderów i do plików 
-        
-
-        [HttpGet]
-        [Route("downloadFile")]
-        [Authorize]
-        public async Task<IActionResult> Download([FromQuery] string fileName)
-        {
-            var downloadFileDto = _emailService.DownloadFile(fileName);
-
-            var memory = new MemoryStream();
-            await using (var stream = new FileStream(downloadFileDto.PathToFile, FileMode.Open))
-            {
-                await stream.CopyToAsync(memory);
-            }
-
-            System.IO.File.Delete(downloadFileDto.PathToFile);
-            memory.Position = 0;
-
-            return File(memory, downloadFileDto.ExtensionFile, fileName);
-
-        } */
-
-
-        [HttpGet]
-        [Route("download")]
-        [Authorize]
-        public async Task<IActionResult> Download([FromQuery] string? directory, [FromQuery] string fileName)
-        {
-            var downloadFileDto = _emailService.DownloadFileFromDirectory(directory, fileName);
-
-            var memory = new MemoryStream();
-
-            await using (var stream = new FileStream(downloadFileDto.PathToFile, FileMode.Open))
-            {
-                await stream.CopyToAsync(memory);
-                stream.Close();
-            }
-
-            System.IO.File.Delete(downloadFileDto.PathToFile);
-            memory.Position = 0;
-            
-            return File(memory, downloadFileDto.ExtensionFile, fileName);
-        }
-
-        [HttpDelete]
-        [Route("deleteFile")]
-        [Authorize]
-        public ActionResult DeleteFile([FromQuery] string? directory, [FromQuery] string fileName)
-        {
-            var result = _emailService.DeleteFile(directory, fileName);
-
-            return Ok(result);
-        }
-
-
-
-        /* Method for test upload File and create account
+        //Method for test upload File and create account
+        /*
         [HttpPost]
         [Route("generateData")]
         [Authorize]

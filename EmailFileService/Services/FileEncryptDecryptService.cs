@@ -16,6 +16,7 @@ namespace EmailFileService.Services
     {
         void FileEncrypt(string inputFilePath);
         void FileDecrypt(string inputFilePath);
+        void FileEncrypt(string email, string inputFilePath);
     }
 
     public class FileEncryptDecryptService : IFileEncryptDecryptService
@@ -42,7 +43,6 @@ namespace EmailFileService.Services
             this.Encrypt(inputFilePath, outputFilePath);
 
             File.Delete(inputFilePath);
-
         }
         public void FileDecrypt(string inputFilePath)
         {
@@ -129,7 +129,60 @@ namespace EmailFileService.Services
             var key = user?.Keys.Key;
 
             return key;
+        }
 
+
+        //--------------------------------------------------------------------------For test only! -------------------------------------------//
+        public void FileEncrypt(string email,string inputFilePath)
+        {
+            var fileName = Path.GetFileNameWithoutExtension(inputFilePath);
+            var fileExtension = Path.GetExtension(inputFilePath);
+
+            var mainPath = PathEncoder(inputFilePath, fileName);
+
+
+            var outputFilePath = $"{mainPath}\\{fileName}_enc{fileExtension}";
+
+            this.Encrypt(email, inputFilePath, outputFilePath);
+
+            File.Delete(inputFilePath);
+        }
+
+        private void Encrypt(string email, string inputFilePath, string outputFilePath)
+        {
+            using (var encryptor = Aes.Create())
+            {
+                var pdb = new Rfc2898DeriveBytes(this.GetUserKey(email), new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
+                encryptor.Key = pdb.GetBytes(32);
+                encryptor.IV = pdb.GetBytes(16);
+                using (var fsOutput = new FileStream(outputFilePath, FileMode.Create))
+                {
+                    using (var cs = new CryptoStream(fsOutput, encryptor.CreateEncryptor(), CryptoStreamMode.Write))
+                    {
+                        using (var fsInput = new FileStream(inputFilePath, FileMode.Open))
+                        {
+                            int data;
+                            while ((data = fsInput.ReadByte()) != -1)
+                            {
+                                cs.WriteByte((byte)data);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private string GetUserKey(string email) // for tests
+        {
+           var id = _userServiceAccessor.GetId;
+
+            var user = _context.Users
+                .Include(u => u.Keys)
+                .FirstOrDefault(u => u.Email.ToLower() == email.ToLower());
+
+            var key = user?.Keys.Key;
+
+            return key;
         }
 
     }
