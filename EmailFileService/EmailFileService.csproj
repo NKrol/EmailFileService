@@ -5,11 +5,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="wwwroot\FileTo\documentDOC.doc" />
+    <Content Remove="wwwroot\FileTo\documentDOCX.docx" />
+    <Content Remove="wwwroot\FileTo\documentPDF.pdf" />
+    <Content Remove="wwwroot\FileTo\image.jpg" />
+    <Content Remove="wwwroot\FileTo\notatnik.txt" />
+    <Content Remove="wwwroot\FileTo\screanshot.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="10.1.1" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
     <PackageReference Include="FluentValidation" Version="10.3.0" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="10.3.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="10.3.0" />
+    <PackageReference Include="FreeSpire.Doc" Version="7.11.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.8" />
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.8" />
@@ -27,6 +37,12 @@
 
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
+    <None Include="wwwroot\FileTo\documentDOC.doc" />
+    <None Include="wwwroot\FileTo\documentDOCX.docx" />
+    <None Include="wwwroot\FileTo\documentPDF.pdf" />
+    <None Include="wwwroot\FileTo\image.jpg" />
+    <None Include="wwwroot\FileTo\notatnik.txt" />
+    <None Include="wwwroot\FileTo\screanshot.jpg" />
   </ItemGroup>
 
 </Project>

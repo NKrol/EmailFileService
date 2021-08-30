@@ -44,7 +44,7 @@ namespace EmailFileService.Controllers
         }
 
         //Method for test upload File and create account
-        /*
+        
         [HttpPost]
         [Route("generateData")]
         [Authorize]
@@ -54,6 +54,6 @@ namespace EmailFileService.Controllers
 
             return Ok();
         }
-        */
+        
     }
 }

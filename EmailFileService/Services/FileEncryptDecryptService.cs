@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using EmailFileService.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Spire.Doc;
+using Document = Spire.Doc.Document;
 using File = System.IO.File;
 
 namespace EmailFileService.Services
@@ -17,6 +20,9 @@ namespace EmailFileService.Services
         void FileEncrypt(string inputFilePath);
         void FileDecrypt(string inputFilePath);
         void FileEncrypt(string email, string inputFilePath);
+        void EncryptDoc(string email, string path);
+        void EncryptDoc(string path);
+        void DecryptDoc(string path);
     }
 
     public class FileEncryptDecryptService : IFileEncryptDecryptService
@@ -69,6 +75,35 @@ namespace EmailFileService.Services
             return takeDirectory;
         }
 
+        public void EncryptDoc(string path)
+        {
+            var document = new Document();
+            document.LoadFromFile(path);
+
+            document.Encrypt(GetUserKey());
+
+            //var index = path.LastIndexOf("/", StringComparison.Ordinal);
+
+            //var fileName = path.Substring(index, path.Length - index);
+
+            document.SaveToFile(path, FileFormat.Auto);
+        }
+
+        public void DecryptDoc(string path)
+        {
+            var pathOne = path;//.Replace("_enc.", ".");
+
+            var document = new Document();
+            document.LoadFromFile(pathOne, FileFormat.Auto, GetUserKey());
+
+            document.RemoveEncryption();
+
+            //var index = pathOne.LastIndexOf("/", StringComparison.Ordinal);
+
+            //var fileName = pathOne.Substring(index, pathOne.Length - index);
+
+            document.SaveToFile(pathOne, FileFormat.Auto);
+        }
 
         private void Encrypt(string inputFilePath, string outputFilePath)
         {
@@ -132,7 +167,7 @@ namespace EmailFileService.Services
         }
 
 
-        //--------------------------------------------------------------------------For test only! -------------------------------------------//
+        /*-------------------------------------------------------------------------------- Method for Test Upload File --------------------------------------------------------------------------------*/
         public void FileEncrypt(string email,string inputFilePath)
         {
             var fileName = Path.GetFileNameWithoutExtension(inputFilePath);
@@ -171,6 +206,22 @@ namespace EmailFileService.Services
                 }
             }
         }
+
+        public void EncryptDoc(string email, string path)
+        {
+            var document = new Document();
+            document.LoadFromFile(path);
+
+            document.Encrypt(GetUserKey(email));
+
+            //var index = path.LastIndexOf("/", StringComparison.Ordinal);
+
+            //var fileName = path.Substring(index + 1, path.Length - index - 1);
+
+            document.SaveToFile(path, FileFormat.Auto);
+        }
+
+        
 
         private string GetUserKey(string email) // for tests
         {

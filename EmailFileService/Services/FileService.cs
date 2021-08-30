@@ -55,7 +55,19 @@ namespace EmailFileService.Services
 
             var fullPath = userFiles + mainDirectoryUser + "/" + directory + "/" + fileName;
 
-            _encrypt.FileDecrypt(fullPath);
+            var fileType = query.Directories.FirstOrDefault(f => f.DirectoryPath == directory).Files
+                .FirstOrDefault(f => f.NameOfFile == fileName).FileType;
+
+            var conentTypeTab = new string[]
+            {
+                "application/vnd.ms-word", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            };
+
+            if (conentTypeTab.Contains(fileType))
+                _encrypt.DecryptDoc(fullPath);
+            else
+                _encrypt.FileDecrypt(fullPath);
 
             return new DownloadFileDto()
             {

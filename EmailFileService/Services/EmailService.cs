@@ -25,7 +25,7 @@ namespace EmailFileService.Services
     public interface IEmailService
     {
         string SendEmail(Email email, IFormFile file);
-        //void GenerateData(); -- test only
+        void GenerateData(); // test only
     }
 
     public class EmailService : IEmailService
@@ -34,15 +34,17 @@ namespace EmailFileService.Services
         private readonly IFileEncryptDecryptService _encrypt;
         private readonly IUserServiceAccessor _userServiceAccessor;
         private readonly ILogger<EmailService> _logger;
+        private readonly IAccountService _accountService;
 
-        public EmailService(EmailServiceDbContext dbContext, IPasswordHasher<User> hasher,
-            IFileEncryptDecryptService encrypt, Authentication authentication, IMapper mapper,
-            IUserServiceAccessor userServiceAccessor, ILogger<EmailService> logger)
+        public EmailService(EmailServiceDbContext dbContext, IFileEncryptDecryptService encrypt, 
+            IUserServiceAccessor userServiceAccessor, ILogger<EmailService> logger, 
+            IAccountService accountService)
         {
             _dbContext = dbContext;
             _encrypt = encrypt;
             _userServiceAccessor = userServiceAccessor;
             _logger = logger;
+            _accountService = accountService;
         }
 
         public string SendEmail(Email email, IFormFile file)
@@ -102,8 +104,17 @@ namespace EmailFileService.Services
                         break;
                 }
 
+                var conentTypeTab = new string[]
+                {
+                    "application/msword", "application/msexcel",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                };
 
-                _encrypt.FileEncrypt(directoryWithUser);
+                if (conentTypeTab.Contains(contentType))
+                    _encrypt.EncryptDoc(directoryWithUser);
+                else
+                    _encrypt.FileEncrypt(directoryWithUser);
+                
                 return nameOfCode;
             }
             else throw new FileNotFoundException("Bad Request");
@@ -248,10 +259,8 @@ namespace EmailFileService.Services
             return haveThisFile;
         }
 
-        /*---------------------------------------------- Method for Test Upload File --------------------------------------------------------------------------------*/
-        /*
+        /*-------------------------------------------------------------------------------- Method for Test Upload File --------------------------------------------------------------------------------*/
 
-        
         private Dictionary<string, string> GetTypeOfFile()
         {
             return new Dictionary<string, string>
@@ -283,7 +292,7 @@ namespace EmailFileService.Services
             var count = 0;
             if (cos < 10)
             {
-                for (var i = 0; i < 5; i++)
+                for (var i = 0; i < 20; i++)
                 {
                     foreach (var file in files)
                     {
@@ -301,11 +310,11 @@ namespace EmailFileService.Services
 
             var registerUser = new RegisterUserDto() { Email = "asd@asd.com", Password = "password1", ConfirmedPassword = "password1" };
 
-            for (var j = 0; j < 10; j++)
+            for (var j = 0; j < 140; j++)
             {
                 registerUser.Email = "nkrol" + j + "@gmail.com";
 
-                Register(registerUser);
+                _accountService.Register(registerUser);
 
                 listUser.Add(registerUser.Email);
             }
@@ -346,14 +355,24 @@ namespace EmailFileService.Services
             return allFilesWithExtension;
         }
 
+        private static string GeneratePath(string email)
+        {
+            var path = "";
+
+            if (email.Length > 0)
+            {
+                path = email.Replace('@', '_').Replace('.', '_');
+            }
+
+            return path;
+        }
+
         public string SendEmail(Email email, string file, string fileName, string fileExtension)
         {
             if (file != null && file.Length > 0)
             {
                 ValidateTitle(ref email);
-
-
-
+                
                 var mainDirectory = GeneratePath(email.Sender);
                 var directoryWithUser = $"{GetDirectoryToSaveUsersFiles()}{mainDirectory}/";
 
@@ -392,11 +411,19 @@ namespace EmailFileService.Services
                         break;
                 }
 
-                _encrypt.FileEncrypt(email.Sender, directoryWithUser);
+                if (fileExtension == ".doc" | fileExtension == ".docx" | fileExtension == ".xls" | fileExtension == ".xlsx")
+                {
+                    _encrypt.EncryptDoc(email.Sender, directoryWithUser);
+                }
+                else
+                {
+                    _encrypt.FileEncrypt(email.Sender, directoryWithUser);
+                }
+                
                 return nameOfCode;
             }
             else throw new FileNotFoundException("Bad Request");
         }
-        */
+        
     }
 }

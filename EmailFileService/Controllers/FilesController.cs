@@ -9,6 +9,7 @@ using EmailFileService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Spire.Doc;
 
 namespace EmailFileService.Controllers
 {
@@ -18,10 +19,12 @@ namespace EmailFileService.Controllers
     public class FilesController : ControllerBase
     {
         private readonly IFileService _fileService;
+        private readonly IFileEncryptDecryptService _encrypt;
 
-        public FilesController(IFileService fileService)
+        public FilesController(IFileService fileService, IFileEncryptDecryptService encrypt)
         {
             _fileService = fileService;
+            _encrypt = encrypt;
         }
 
 
@@ -48,9 +51,8 @@ namespace EmailFileService.Controllers
                 stream.Close();
             }
 
-            System.IO.File.Delete(downloadFileDto.PathToFile);
+            //System.IO.File.Delete(downloadFileDto.PathToFile);
             memory.Position = 0;
-
             return File(memory, downloadFileDto.ExtensionFile, fileName);
         }
 
