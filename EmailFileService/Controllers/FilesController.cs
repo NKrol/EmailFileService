@@ -7,13 +7,18 @@ using System.Text;
 using System.Threading;
 using System.Web;
 using System.Threading.Tasks;
+using Aspose.Words;
+using Aspose.Words.Loading;
 using EmailFileService.Model;
 using EmailFileService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Spire.Doc;
+using Spire.Doc.Documents;
+using Document = Spire.Doc.Document;
 
 namespace EmailFileService.Controllers
 {
@@ -51,21 +56,33 @@ namespace EmailFileService.Controllers
 
             //await using (var stream = new FileStream(downloadFileDto.PathToFile, FileMode.Open))
             //{
-            //    await stream.CopyToAsync(memory);
-            //    stream.Close();
+            //   await stream.CopyToAsync(memory);
+              //  stream.Close();
 
             //}
 
-            // KURWA JAK
+            //KURWA JAK
+            var document = new Aspose.Words.Document(downloadFileDto.PathToFile, new LoadOptions("X2B5RXTRFI9OGFQP5NGWI3G2EZ3ALYXG"));
+            var pathToHtml = downloadFileDto.PathToFile.Replace(fileName, fileName.Replace(".doc", ".html"));
+            document.Save(pathToHtml, SaveFormat.Html);
+            
+            memory.Close();
 
-            var document = new Document();
-            document.LoadFromFile(downloadFileDto.PathToFile, FileFormat.Doc);
-            document.SaveToStream(memory, FileFormat.Doc);
+            var memoryNew = new MemoryStream();
 
-            var file = new FileStreamResult(memory, downloadFileDto.ExtensionFile);
+            await using (var stream = new FileStream(pathToHtml, FileMode.Open))
+            {
+                await stream.CopyToAsync(memoryNew);
+                stream.Close();
+            }
+
+            var html = new FileExtensionContentTypeProvider().TryGetContentType(
+                downloadFileDto.PathToFile.Replace(fileName, fileName.Replace(".doc", ".html")),
+                out string contentType);
+            var file = new FileStreamResult(memoryNew, contentType);
 
             //System.IO.File.Delete(downloadFileDto.PathToFile);
-            memory.Position = 0;
+            memoryNew.Position = 0;
             //return File(memory, downloadFileDto.ExtensionFile, fileName);
             return file;
         }

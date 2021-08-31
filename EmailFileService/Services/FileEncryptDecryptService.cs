@@ -102,7 +102,7 @@ namespace EmailFileService.Services
 
             //var fileName = pathOne.Substring(index, pathOne.Length - index);
 
-            document.SaveToFile(pathOne, FileFormat.Auto);
+            document.SaveToFile(pathOne.Replace("_enc.", "_dec."), FileFormat.Auto);
         }
 
         private void Encrypt(string inputFilePath, string outputFilePath)
