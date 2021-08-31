@@ -2,11 +2,15 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Mime;
 using System.Text;
+using System.Threading;
+using System.Web;
 using System.Threading.Tasks;
 using EmailFileService.Model;
 using EmailFileService.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Spire.Doc;
@@ -45,15 +49,25 @@ namespace EmailFileService.Controllers
 
             var memory = new MemoryStream();
 
-            await using (var stream = new FileStream(downloadFileDto.PathToFile, FileMode.Open))
-            {
-                await stream.CopyToAsync(memory);
-                stream.Close();
-            }
+            //await using (var stream = new FileStream(downloadFileDto.PathToFile, FileMode.Open))
+            //{
+            //    await stream.CopyToAsync(memory);
+            //    stream.Close();
+
+            //}
+
+            // KURWA JAK
+
+            var document = new Document();
+            document.LoadFromFile(downloadFileDto.PathToFile, FileFormat.Doc);
+            document.SaveToStream(memory, FileFormat.Doc);
+
+            var file = new FileStreamResult(memory, downloadFileDto.ExtensionFile);
 
             //System.IO.File.Delete(downloadFileDto.PathToFile);
             memory.Position = 0;
-            return File(memory, downloadFileDto.ExtensionFile, fileName);
+            //return File(memory, downloadFileDto.ExtensionFile, fileName);
+            return file;
         }
 
         [HttpDelete]
