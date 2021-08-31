@@ -56,7 +56,6 @@ namespace EmailFileService.Services
             var fileExtension = Path.GetExtension(inputFilePath);
 
             var mainPath = PathEncoder(inputFilePath, fileName);
-
             var inPutFileName = $"{mainPath}\\{fileName}_enc{fileExtension}";
 
             var fileDec = fileName.Replace("_enc", "");

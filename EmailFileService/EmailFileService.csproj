@@ -17,6 +17,7 @@
     <PackageReference Include="Aspose.Words" Version="21.8.0" />
     <PackageReference Include="AutoMapper" Version="10.1.1" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
+    <PackageReference Include="DocumentFormat.OpenXml" Version="2.13.1" />
     <PackageReference Include="FluentValidation" Version="10.3.0" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="10.3.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="10.3.0" />
@@ -30,6 +31,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NLog.Web.AspNetCore" Version="4.14.0" />
+    <PackageReference Include="OpenXmlPowerTools" Version="4.5.3.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,6 +42,10 @@
     <None Include="wwwroot\FileTo\image.jpg" />
     <None Include="wwwroot\FileTo\notatnik.txt" />
     <None Include="wwwroot\FileTo\screanshot.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="UserDirectory\" />
   </ItemGroup>
 
 </Project>

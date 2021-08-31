@@ -4,13 +4,16 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using AutoMapper;
+using DocumentFormat.OpenXml.Packaging;
 using EmailFileService.Entities;
 using EmailFileService.Exception;
 using EmailFileService.Model;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using OpenXmlPowerTools;
 using File = System.IO.File;
 
 namespace EmailFileService.Services
@@ -55,19 +58,7 @@ namespace EmailFileService.Services
 
             var fullPath = userFiles + mainDirectoryUser + "/" + directory + "/" + fileName;
 
-            var fileType = query.Directories.FirstOrDefault(f => f.DirectoryPath == directory).Files
-                .FirstOrDefault(f => f.NameOfFile == fileName).FileType;
-
-            var conentTypeTab = new string[]
-            {
-                "application/vnd.ms-word", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","application/msword"
-            };
-
-            if (conentTypeTab.Contains(fileType))
-                _encrypt.DecryptDoc(fullPath);
-            else
-                _encrypt.FileDecrypt(fullPath);
+            _encrypt.FileDecrypt(fullPath);
 
             return new DownloadFileDto()
             {
@@ -75,6 +66,41 @@ namespace EmailFileService.Services
                 PathToFile = fullPath
             };
         }
+
+        //private MemoryStream GetMemoryStreamOfFileOther(string filePath)
+        //{
+        //    var memory = new MemoryStream();
+
+        //    using (var stream = new FileStream(filePath, FileMode.Open))
+        //    {
+        //       stream.CopyToAsync(memory);
+        //       stream.Close();
+        //    }
+
+        //    return memory;
+        //}
+
+        //private MemoryStream GetMemoryStreamOfFile(string fullPath, string fileType, string fileName)
+        //{
+        //    byte[] byteArray = File.ReadAllBytes(fullPath);
+        //    MemoryStream memoryStream = new MemoryStream();
+
+        //    memoryStream.Write(byteArray, 0, byteArray.Length);
+        //    using (WordprocessingDocument doc = WordprocessingDocument.Open(memoryStream, true))
+        //    {
+        //        HtmlConverterSettings settings = new HtmlConverterSettings()
+        //        {
+        //            PageTitle = "My Page Title"
+        //        };
+        //        XElement html = HtmlConverter.ConvertToHtml(doc, settings);
+
+        //        var HTMLFilePath = fullPath.Replace(fileName, fileName.Replace(".docx", ".html"));
+
+        //        File.WriteAllText(HTMLFilePath, html.ToStringNewLineOnAttributes());
+        //    }
+
+        //    return memoryStream;
+        //}
 
         public string DeleteFile(string? directory, string fileName)
         {
@@ -165,21 +191,21 @@ namespace EmailFileService.Services
             if (!exist)
             {
                 Directory.CreateDirectory(directoryToMove);
-                var userDirectories = query.Directories.Append(new UserDirectory()
+                var userDirectories = query.Directories.ToList();
+                var cos = userDirectories.Append(new UserDirectory()
                     { DirectoryPath = dto.DirectoryToMove, Files = new List<Entities.File>() }).ToList();
-                query.Directories = userDirectories;
+                query.Directories = cos;
+                _dbContext.SaveChangesAsync();
             }
 
             directoryToMove += fileNameEnc;
 
             File.Copy(actualDirectory, directoryToMove, true);
-            File.Delete(actualDirectory);
-
-            MoveFileDb(dto, ref query);
-
+            //File.Delete(actualDirectory);
+            
             _dbContext.SaveChangesAsync();
         }
-
+        
         private static string GeneratePathToDeleteFile(string path)
         {
             var fileNameWithoutEx = Path.GetFileNameWithoutExtension(path);
@@ -192,17 +218,6 @@ namespace EmailFileService.Services
         }
 
         private string GetDirectoryToSaveUsersFiles() => Directory.GetCurrentDirectory() + "/UserDirectory/";
-
-        private void MoveFileDb(MoveFileDto dto, ref User user)
-        {
-            var thisFile = user.Directories.FirstOrDefault(d => d.DirectoryPath == dto.ActualDirectory).Files
-                .FirstOrDefault(f => f.NameOfFile == dto.FileName);
-            user.Directories.FirstOrDefault(d => d.DirectoryPath == dto.ActualDirectory).Files
-                .FirstOrDefault(f => f.NameOfFile == dto.FileName).Remove();
-
-            var files = user.Directories.FirstOrDefault(d => d.DirectoryPath == dto.DirectoryToMove).Files
-                .Append(thisFile).ToList();
-            user.Directories.FirstOrDefault(d => d.DirectoryPath == dto.DirectoryToMove).Files = files;
-        }
+        
     }
 }
