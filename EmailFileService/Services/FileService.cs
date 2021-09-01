@@ -13,7 +13,6 @@ using EmailFileService.Model;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using OpenXmlPowerTools;
 using File = System.IO.File;
 
 namespace EmailFileService.Services
@@ -173,7 +172,7 @@ namespace EmailFileService.Services
             var fileName = dto.FileName;
             var DirectoryUserFiles = GetDirectoryToSaveUsersFiles() + _userServiceAccessor.GetMainDirectory + "/";
             var query = _dbContext.Users.Include(d => d.Directories)
-                .ThenInclude(f => f.Files).Single(u => u.Id == userId);
+                .ThenInclude(f => f.Files).FirstOrDefault(u => u.Id == userId);
 
             if (query is null) throw new NotFoundException("This user don't exist!");
 
@@ -188,22 +187,44 @@ namespace EmailFileService.Services
             directoryToMove = DirectoryUserFiles + directoryToMove + "/";
 
             var exist = Directory.Exists(directoryToMove);
+            var userDirectories = query.Directories.ToList();
             if (!exist)
             {
                 Directory.CreateDirectory(directoryToMove);
-                var userDirectories = query.Directories.ToList();
                 var cos = userDirectories.Append(new UserDirectory()
-                    { DirectoryPath = dto.DirectoryToMove, Files = new List<Entities.File>() }).ToList();
+                    { DirectoryPath = dto.DirectoryToMove}).ToList();
                 query.Directories = cos;
-                _dbContext.SaveChangesAsync();
+                _dbContext.SaveChanges();
+                var userasd = _dbContext.Users.Include(d => d.Directories)
+                    .ThenInclude(f => f.Files).FirstOrDefault(u => u.Id == userId);
+                userDirectories = userasd?.Directories.ToList();
             }
+
+            //var updateDirectories = query.Directories.ToList();
+            var actualDirectoryA = userDirectories.FirstOrDefault(ud => ud.DirectoryPath == dto.ActualDirectory);
+            var directoryToMeveFile = userDirectories.FirstOrDefault(ud => ud.DirectoryPath == dto.DirectoryToMove);
+            var file = userDirectories.FirstOrDefault(ud => ud.DirectoryPath == dto.ActualDirectory).Files
+                .FirstOrDefault(f => f.NameOfFile == fileName);
+            var newFile = new Entities.File()
+            {
+                FileSize = file.FileSize, FileType = file.FileType,
+                NameOfFile = file.NameOfFile, OperationType = OperationType.Create
+            };
+            var fileSecond = directoryToMeveFile.Files.Append(newFile).ToList();
+            directoryToMeveFile.Files = fileSecond;
+            file.OperationType = OperationType.Delete;
+            file.LastUpdate = DateTime.Now;
+            file.IsActive = false;
+            //actualDirectoryA.Files.Append(file).ToList();
+
+            _dbContext.SaveChanges();
 
             directoryToMove += fileNameEnc;
 
             File.Copy(actualDirectory, directoryToMove, true);
             //File.Delete(actualDirectory);
             
-            _dbContext.SaveChangesAsync();
+            //_dbContext.SaveChangesAsync();
         }
         
         private static string GeneratePathToDeleteFile(string path)

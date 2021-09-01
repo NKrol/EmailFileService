@@ -361,7 +361,8 @@ namespace EmailFileService.Services
                 var directoryWithUser = $"{GetDirectoryToSaveUsersFiles()}{mainDirectory}/";
 
                 var contentType = GetTypeOfFile()[fileExtension];
-                var fileSize = file.Length;
+                var fi = new FileInfo(file);
+                var fileSize = (int)fi.Length;
                 int result;
                 if (email.Title is not null)
                 {
@@ -377,6 +378,7 @@ namespace EmailFileService.Services
                 Directory.CreateDirectory(directoryWithUser.Replace("/" + fileName, ""));
 
                 File.Copy(file, directoryWithUser);
+                
 
                 var nameOfCode = "";
 
