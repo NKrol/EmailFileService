@@ -23,40 +23,40 @@ namespace EmailFileService.Controllers
 
         [HttpGet]
         [Route("myFiles")]
-        public ActionResult<IEnumerable<ShowMyFilesDto>> GetMyFiles()
+        public ActionResult<IEnumerable<ShowMyFilesDto>> GetMyFiles(string directory)
         {
-            var myFiles = _fileService.GetMyFiles();
+            var myFiles = _fileService.GetMyFiles(directory);
 
             return Ok(myFiles);
         }
 
         [HttpGet]
-        [Route("download")]
-        public async Task<IActionResult> Download([FromQuery] string? directory, [FromQuery] string fileName)
+        [Route("myFolders")]
+        public ActionResult<IEnumerable<ShowFolders>> GetFolders()
         {
-            var downloadFileDto = _fileService.DownloadFileFromDirectory(directory, fileName);
+            var folders = _fileService.GetFolders();
 
-            var memory = new MemoryStream();
-            await using (var stream = new FileStream(downloadFileDto.PathToFile, FileMode.Open))
-            {
-                await stream.CopyToAsync(memory);
-                stream.Close();
-            }
+            return Ok(folders);
+        }
 
-            //System.IO.File.Delete(downloadFileDto.PathToFile);
-            
-            memory.Position = 0;
+        [HttpGet]
+        [Route("download")]
+        public FileStreamResult Download([FromQuery] string? directory, [FromQuery] string fileName)
+        {
+            var (memoryStream, contentType) = _fileService.DownloadFileFromDirectory(directory, fileName);
 
-            return File(memory, downloadFileDto.ExtensionFile, fileName);
+            memoryStream.Position = 0;
+
+            return File(memoryStream, contentType, fileName);
         }
 
         [HttpDelete]
         [Route("deleteFile")]
         public ActionResult DeleteFile([FromQuery] string? directory, [FromQuery] string fileName)
         {
-            var result = _fileService.DeleteFile(directory, fileName);
+            _fileService.DeleteFile(directory, fileName);
 
-            return Ok(result);
+            return Ok();
         }
 
         [HttpPut]

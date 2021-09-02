@@ -23,40 +23,40 @@ namespace EmailFileService.Controllers
         }
 
 
-        [HttpPost]
-        [Route("addUser")]
-        public ActionResult AddUser([FromQuery] string email, [FromQuery]string password)
-        {
-            var userToAdd = new User()
-            {
-                Email = email,
-                PasswordHash = password
-            };
+        //[HttpPost]
+        //[Route("addUser")]
+        //public ActionResult AddUser([FromQuery] string email, [FromQuery]string password)
+        //{
+        //    var userToAdd = new User()
+        //    {
+        //        Email = email,
+        //        PasswordHash = password
+        //    };
             
-            _dbQuery.AddUserToDb(userToAdd);
+        //    _dbQuery.AddUserToDb(userToAdd);
 
-            return Ok();
-        }
+        //    return Ok();
+        //}
 
-        [HttpPost]
-        [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = long.MaxValue)]
-        [Route("addFile")]
-        public ActionResult AddFile([FromForm] List<IFormFile> file)
-        {
-            var operation = new FilesOperation(OperationFile.Add, "ASD", file);
+        //[HttpPost]
+        //[RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = long.MaxValue)]
+        //[Route("addFile")]
+        //public ActionResult AddFile([FromForm] List<IFormFile> file)
+        //{
+        //    var operation = new FilesOperation(OperationFile.Add, "ASD", file);
 
-            var operationTest = new FilesOperation(OperationFile.Add, "ASD", file);
-            var operationTestA = new FilesOperation(OperationFile.Add, "ASD/asd",file);
-            var operationTestB = new FilesOperation(OperationFile.Add, "ASD/b/b/b",file);
-            var operationTestC = new FilesOperation(OperationFile.Add, "ASD/c/c/c",file);
-            var operationTestD = new FilesOperation(OperationFile.Add, "ASD/d/d/d",file);
-            var operationTestE = new FilesOperation(OperationFile.Add, "ASD/e/e/e", file);
-            var operationTestF = new FilesOperation(OperationFile.Add, "ASD/f/f/f",file);
+        //    var operationTest = new FilesOperation(OperationFile.Add, "ASD", file);
+        //    var operationTestA = new FilesOperation(OperationFile.Add, "ASD/asd",file);
+        //    var operationTestB = new FilesOperation(OperationFile.Add, "ASD/b/b/b",file);
+        //    var operationTestC = new FilesOperation(OperationFile.Add, "ASD/c/c/c",file);
+        //    var operationTestD = new FilesOperation(OperationFile.Add, "ASD/d/d/d",file);
+        //    var operationTestE = new FilesOperation(OperationFile.Add, "ASD/e/e/e", file);
+        //    var operationTestF = new FilesOperation(OperationFile.Add, "ASD/f/f/f",file);
 
-            return Ok();
-        }
+        //    return Ok();
+        //}
 
-        
+        /*
         [HttpPost]
         [Route("testDb")]
         public ActionResult TryTest()
@@ -164,6 +164,6 @@ namespace EmailFileService.Controllers
 
             return Ok();
         }
-        
+        */
     }
 }

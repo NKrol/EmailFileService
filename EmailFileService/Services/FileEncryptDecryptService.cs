@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using EmailFileService.Entities;
+using EmailFileService.Entities.Logic;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Spire.Doc;
@@ -19,17 +20,16 @@ namespace EmailFileService.Services
     {
         void FileEncrypt(string inputFilePath);
         void FileDecrypt(string inputFilePath);
-        void FileEncrypt(string email, string inputFilePath);
-        void EncryptDoc(string email, string path);
-        void EncryptDoc(string path);
-        void DecryptDoc(string path);
+        //void FileEncrypt(string email, string inputFilePath);
+        //void EncryptDoc(string email, string path);
+        //void EncryptDoc(string path);
+        //void DecryptDoc(string path);
     }
 
     public class FileEncryptDecryptService : IFileEncryptDecryptService
     {
         private readonly IUserServiceAccessor _userServiceAccessor;
-        private readonly EmailServiceDbContext _context;
-        private readonly string KeyA = "ASNDAIOSDHASDSADASDA";
+        private readonly IDbQuery _dbQuery;
 
         //public FileEncryptDecryptService(IUserServiceAccessor userServiceAccessor, EmailServiceDbContext context)
         //{
@@ -37,9 +37,10 @@ namespace EmailFileService.Services
         //    _context = context;
         //}
 
-        public FileEncryptDecryptService()
+        public FileEncryptDecryptService(IUserServiceAccessor userServiceAccessor, IDbQuery dbQuery)
         {
-            
+            _userServiceAccessor = userServiceAccessor;
+            _dbQuery = dbQuery;
         }
 
         public void FileEncrypt(string inputFilePath)
@@ -85,7 +86,7 @@ namespace EmailFileService.Services
             var document = new Document();
             document.LoadFromFile(path);
 
-            document.Encrypt(KeyA);
+            //document.Encrypt();
 
             //var index = path.LastIndexOf("/", StringComparison.Ordinal);
 
@@ -99,7 +100,7 @@ namespace EmailFileService.Services
             var pathOne = path;//.Replace("_enc.", ".");
 
             var document = new Document();
-            document.LoadFromFile(pathOne, FileFormat.Auto, KeyA);
+            //document.LoadFromFile(pathOne, FileFormat.Auto, KeyA);
 
             document.RemoveEncryption();
 
@@ -114,7 +115,7 @@ namespace EmailFileService.Services
         {
             using (var encryptor = Aes.Create())
             {
-                var pdb = new Rfc2898DeriveBytes(KeyA, new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
+                var pdb = new Rfc2898DeriveBytes(_dbQuery.GetUserKey((int)_userServiceAccessor.GetId), new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
                 encryptor.Key = pdb.GetBytes(32);
                 encryptor.IV = pdb.GetBytes(16);
                 using (var fsOutput = new FileStream(outputFilePath, FileMode.Create))
@@ -138,7 +139,7 @@ namespace EmailFileService.Services
         {
             using (var encryptor = Aes.Create())
             {
-                var pdb = new Rfc2898DeriveBytes(KeyA, new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
+                var pdb = new Rfc2898DeriveBytes(_dbQuery.GetUserKey((int)_userServiceAccessor.GetId), new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
                 encryptor.Key = pdb.GetBytes(32);
                 encryptor.IV = pdb.GetBytes(16);
                 using (var fsInput = new FileStream(inputFilePath, FileMode.Open))
@@ -158,22 +159,11 @@ namespace EmailFileService.Services
             }
         }
 
-        private string GetUserKey()
-        {
-           var id = _userServiceAccessor.GetId;
-
-            var user = _context.Users
-                .Include(u => u.Keys)
-                .FirstOrDefault(u => u.Id == id);
-
-            var key = user?.Keys.Key;
-
-            return key;
-        }
-
 
         /*-------------------------------------------------------------------------------- Method for Test Upload File --------------------------------------------------------------------------------*/
+        /*
         public void FileEncrypt(string email,string inputFilePath)
+
         {
             var fileName = Path.GetFileNameWithoutExtension(inputFilePath);
             var fileExtension = Path.GetExtension(inputFilePath);
@@ -228,18 +218,18 @@ namespace EmailFileService.Services
 
         
 
-        private string GetUserKey(string email) // for tests
-        {
-           var id = _userServiceAccessor.GetId;
+        //private string GetUserKey(string email) // for tests
+        //{
+        //   var id = _userServiceAccessor.GetId;
 
-            var user = _context.Users
-                .Include(u => u.Keys)
-                .FirstOrDefault(u => u.Email.ToLower() == email.ToLower());
+        //    var user = _context.Users
+        //        .Include(u => u.Keys)
+        //        .FirstOrDefault(u => u.Email.ToLower() == email.ToLower());
 
-            var key = user?.Keys.Key;
+        //    var key = user?.Keys.Key;
 
-            return key;
-        }
-
+        //    return key;
+        //}
+        */
     }
 }

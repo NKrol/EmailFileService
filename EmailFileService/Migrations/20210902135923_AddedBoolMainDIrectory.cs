@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace EmailFileService.Migrations
 {
-    public partial class ChangeFileEntities : Migration
+    public partial class AddedBoolMainDIrectory : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -56,6 +56,7 @@ namespace EmailFileService.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     DirectoryPath = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsMainDirectory = table.Column<bool>(type: "bit", nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: true),
                     AddDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdate = table.Column<DateTime>(type: "datetime2", nullable: true),

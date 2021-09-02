@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmailFileService.Migrations
 {
     [DbContext(typeof(EmailServiceDbContext))]
-    [Migration("20210901201850_ChangeFileEntities")]
-    partial class ChangeFileEntities
+    [Migration("20210902135923_AddedBoolMainDIrectory")]
+    partial class AddedBoolMainDIrectory
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -139,6 +139,9 @@ namespace EmailFileService.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsMainDirectory")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("LastUpdate")

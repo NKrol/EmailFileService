@@ -10,5 +10,6 @@ namespace EmailFileService.Entities
     {
         public string DirectoryPath { get; set; }
         public virtual IEnumerable<File> Files { get; set; }
+        public bool IsMainDirectory { get; set; } = false;
     }
 }

@@ -139,6 +139,9 @@ namespace EmailFileService.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsMainDirectory")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("LastUpdate")
                         .HasColumnType("datetime2");
 
