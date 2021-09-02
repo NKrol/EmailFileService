@@ -207,7 +207,7 @@ namespace EmailFileService.Services
                 .FirstOrDefault(f => f.NameOfFile == fileName);
             var newFile = new Entities.File()
             {
-                FileSize = file.FileSize, FileType = file.FileType,
+                FileSize = file.FileSize, /*FileType = file.FileType,*/
                 NameOfFile = file.NameOfFile, OperationType = OperationType.Create
             };
             var fileSecond = directoryToMeveFile.Files.Append(newFile).ToList();

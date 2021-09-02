@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace EmailFileService.Migrations
 {
-    public partial class Init : Migration
+    public partial class ChangeFileEntities : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {

@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EmailFileService.Entities;
+using EmailFileService.Entities.Logic;
 using EmailFileService.Middleware;
 using EmailFileService.Model;
 using EmailFileService.Model.Validators;
@@ -72,6 +73,7 @@ namespace EmailFileService
             services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IUserServiceAccessor, UserServiceAccessor>();
             services.AddScoped<IFileService, FileService>();
+            services.AddScoped<IDbQuery, DbQuery>();
             services.AddScoped<RequestTimeMiddleware>();
             services.AddScoped<ErrorHandlingMiddleware>();
             services.AddControllers().AddFluentValidation();

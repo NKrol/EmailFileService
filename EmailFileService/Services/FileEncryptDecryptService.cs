@@ -29,11 +29,17 @@ namespace EmailFileService.Services
     {
         private readonly IUserServiceAccessor _userServiceAccessor;
         private readonly EmailServiceDbContext _context;
+        private readonly string KeyA = "ASNDAIOSDHASDSADASDA";
 
-        public FileEncryptDecryptService(IUserServiceAccessor userServiceAccessor, EmailServiceDbContext context)
+        //public FileEncryptDecryptService(IUserServiceAccessor userServiceAccessor, EmailServiceDbContext context)
+        //{
+        //    _userServiceAccessor = userServiceAccessor;
+        //    _context = context;
+        //}
+
+        public FileEncryptDecryptService()
         {
-            _userServiceAccessor = userServiceAccessor;
-            _context = context;
+            
         }
 
         public void FileEncrypt(string inputFilePath)
@@ -79,7 +85,7 @@ namespace EmailFileService.Services
             var document = new Document();
             document.LoadFromFile(path);
 
-            document.Encrypt(GetUserKey());
+            document.Encrypt(KeyA);
 
             //var index = path.LastIndexOf("/", StringComparison.Ordinal);
 
@@ -93,7 +99,7 @@ namespace EmailFileService.Services
             var pathOne = path;//.Replace("_enc.", ".");
 
             var document = new Document();
-            document.LoadFromFile(pathOne, FileFormat.Auto, GetUserKey());
+            document.LoadFromFile(pathOne, FileFormat.Auto, KeyA);
 
             document.RemoveEncryption();
 
@@ -108,7 +114,7 @@ namespace EmailFileService.Services
         {
             using (var encryptor = Aes.Create())
             {
-                var pdb = new Rfc2898DeriveBytes(this.GetUserKey(), new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
+                var pdb = new Rfc2898DeriveBytes(KeyA, new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
                 encryptor.Key = pdb.GetBytes(32);
                 encryptor.IV = pdb.GetBytes(16);
                 using (var fsOutput = new FileStream(outputFilePath, FileMode.Create))
@@ -132,7 +138,7 @@ namespace EmailFileService.Services
         {
             using (var encryptor = Aes.Create())
             {
-                var pdb = new Rfc2898DeriveBytes(this.GetUserKey(), new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
+                var pdb = new Rfc2898DeriveBytes(KeyA, new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
                 encryptor.Key = pdb.GetBytes(32);
                 encryptor.IV = pdb.GetBytes(16);
                 using (var fsInput = new FileStream(inputFilePath, FileMode.Open))

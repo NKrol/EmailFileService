@@ -205,7 +205,7 @@ namespace EmailFileService.Services
                 {
                     NameOfFile = nameOfFile,
                     FileSize = fileSize,
-                    FileType = contentType
+                    //FileType = contentType
                 }).ToList();
                 newDirectory.Files = newFile;
                 userDirectory.Append(newDirectory).ToList();
@@ -227,7 +227,7 @@ namespace EmailFileService.Services
             if (cos is false)
             {
                 var toSave = userDirectory.Files
-                            .Append(new Entities.File() { NameOfFile = nameOfFile, FileType = contentType, FileSize = fileSize })
+                            .Append(new Entities.File() { NameOfFile = nameOfFile, /*FileType = contentType,*/ FileSize = fileSize })
                             .ToList();
 
                 userDirectory.Files = toSave;
