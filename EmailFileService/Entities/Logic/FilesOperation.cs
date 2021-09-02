@@ -10,7 +10,7 @@ namespace EmailFileService.Entities.Logic
 {
     public class FilesOperation
     {
-        private string Path;
+        private readonly string Path;
 
         private readonly string _directoryName;
         private readonly OperationFile _operationFile;
@@ -101,7 +101,7 @@ namespace EmailFileService.Entities.Logic
             }
         }
 
-        private void MoveFile(string directoryName, string newDirectoryName)
+        private static void MoveFile(string directoryName, string newDirectoryName)
         {
             var exists = Directory.Exists(newDirectoryName);
             if (!exists)
@@ -113,19 +113,19 @@ namespace EmailFileService.Entities.Logic
             DeleteFile(directoryName);
         }
 
-        private void DeleteFile(string directoryName)
+        private static void DeleteFile(string directoryName)
         {
             System.IO.File.Delete(directoryName);
         }
 
-        private void AddFileToDirectory(string fullPath, IFormFile fileStream)
+        private static void AddFileToDirectory(string fullPath, IFormFile fileStream)
         {
             using var writer = new FileStream(fullPath, FileMode.Create);
             fileStream.CopyTo(writer);
             writer.Close();
         }
 
-        private void AddDirectory(string pathWithOutFileName)
+        private static void AddDirectory(string pathWithOutFileName)
         {
             var exist = Directory.Exists(pathWithOutFileName);
             if (!exist) Directory.CreateDirectory(pathWithOutFileName);

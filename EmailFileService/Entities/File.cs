@@ -15,9 +15,7 @@ namespace EmailFileService.Entities
             get =>  _nameOfFile;
             set
             {
-                var index = value.LastIndexOf('.');
-
-                var ex = value.Substring(index, value.Length - index);
+                var ex = value.Substring(value.LastIndexOf('.'), value.Length - value.LastIndexOf('.'));
 
                 FileType = GetTypeOfFile()[ex];
 
@@ -29,7 +27,7 @@ namespace EmailFileService.Entities
 
         public long FileSize { get; set; }
 
-        private Dictionary<string, string> GetTypeOfFile()
+        private static Dictionary<string, string> GetTypeOfFile()
         {
             return new Dictionary<string, string>
             {

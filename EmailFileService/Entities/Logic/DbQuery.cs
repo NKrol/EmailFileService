@@ -331,7 +331,7 @@ namespace EmailFileService.Entities.Logic
             return path;
         }
 
-        private static Random Random = new Random();
+        private static readonly Random Random = new();
         private static string GenerateKey()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

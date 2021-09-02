@@ -1,21 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using AutoMapper;
-using DocumentFormat.OpenXml.Packaging;
-using EmailFileService.Entities;
 using EmailFileService.Entities.Logic;
 using EmailFileService.Exception;
 using EmailFileService.Model;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using File = System.IO.File;
 
 namespace EmailFileService.Services
 {
@@ -78,16 +65,14 @@ namespace EmailFileService.Services
 
         public void MoveFile(MoveFileDto dto)
         {
-            ValidateTitle(ref dto);
+            ValidateMoveFileDto(ref dto);
 
             _dbQuery.MoveFile(dto);
 
-            new FilesOperation(OperationFile.Move, _dbQuery, _userServiceAccessor, dto);
-
+            var unused = new FilesOperation(OperationFile.Move, _dbQuery, _userServiceAccessor, dto);
         }
 
-
-        private static void ValidateTitle(ref MoveFileDto dto)
+        private static void ValidateMoveFileDto(ref MoveFileDto dto)
         {
             var actualDirectory = dto.ActualDirectory;
             var newDirectory = dto.DirectoryToMove;
