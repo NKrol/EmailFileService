@@ -1,28 +1,22 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using EmailFileService.Authorization;
 using EmailFileService.Entities;
-using EmailFileService.Entities.Logic;
 using EmailFileService.Middleware;
 using EmailFileService.Model;
+using EmailFileService.Model.Logic;
 using EmailFileService.Model.Validators;
 using EmailFileService.Services;
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 
 namespace EmailFileService
@@ -73,7 +67,9 @@ namespace EmailFileService
             services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IUserServiceAccessor, UserServiceAccessor>();
             services.AddScoped<IFileService, FileService>();
+            services.AddScoped<IFilesOperation, FilesOperation>();
             services.AddScoped<IDbQuery, DbQuery>();
+            services.AddScoped<IAuthorizationHandler, ResourceOperationRequirementHandler>();
             services.AddScoped<RequestTimeMiddleware>();
             services.AddScoped<ErrorHandlingMiddleware>();
             services.AddControllers().AddFluentValidation();

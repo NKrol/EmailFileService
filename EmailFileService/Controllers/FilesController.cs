@@ -52,7 +52,7 @@ namespace EmailFileService.Controllers
 
         [HttpDelete]
         [Route("deleteFile")]
-        public ActionResult DeleteFile([FromQuery] string? directory, [FromQuery] string fileName)
+        public ActionResult DeleteFile([FromQuery] string directory, [FromQuery]string fileName)
         {
             _fileService.DeleteFile(directory, fileName);
 

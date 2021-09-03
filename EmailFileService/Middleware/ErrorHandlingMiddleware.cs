@@ -40,6 +40,11 @@ namespace EmailFileService.Middleware
                 context.Response.StatusCode = 404;
                 await context.Response.WriteAsync(notFoundException.Message);
             }
+            catch (RequirementException requirementException)
+            {
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync(requirementException.Message);
+            }
             catch (CreatedAccountException e)
             {
                 context.Response.StatusCode = 404;

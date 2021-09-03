@@ -24,7 +24,7 @@ namespace EmailFileService.Entities
         }
 
         public string FileType { get; private set; }
-
+        public int CreatedBy { get; set; }
         public long FileSize { get; set; }
 
         private static Dictionary<string, string> GetTypeOfFile()

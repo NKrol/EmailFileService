@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmailFileService.Migrations
 {
     [DbContext(typeof(EmailServiceDbContext))]
-    [Migration("20210902135923_AddedBoolMainDIrectory")]
-    partial class AddedBoolMainDIrectory
+    [Migration("20210902224840_CreatedBy")]
+    partial class CreatedBy
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -30,6 +30,9 @@ namespace EmailFileService.Migrations
 
                     b.Property<DateTime>("AddDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
 
                     b.Property<long>("FileSize")
                         .HasColumnType("bigint");

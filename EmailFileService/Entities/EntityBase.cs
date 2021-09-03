@@ -22,12 +22,21 @@ namespace EmailFileService.Entities
             OperationType = OperationType.Delete;
         }
 
+        public void Move()
+        {
+            IsActive = false;
+            LastUpdate = DateTime.Now;
+            OperationType = OperationType.Move;
+        }
+
     }
 
     public enum OperationType
     {
         Create,
         Delete,
-        Modify
+        Modify,
+        Overwrite,
+        Move
     }
 }

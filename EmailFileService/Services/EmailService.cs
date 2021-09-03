@@ -3,7 +3,7 @@ using EmailFileService.Model;
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 using System.IO;
-using EmailFileService.Entities.Logic;
+using EmailFileService.Model.Logic;
 
 namespace EmailFileService.Services
 {
@@ -16,12 +16,12 @@ namespace EmailFileService.Services
     public class EmailService : IEmailService
     {
         private readonly IDbQuery _dbQuery;
-        private readonly IUserServiceAccessor _userServiceAccessor;
+        private readonly IFilesOperation _filesOperation;
 
-        public EmailService(IDbQuery dbQuery, IUserServiceAccessor userServiceAccessor)
+        public EmailService(IDbQuery dbQuery, IFilesOperation filesOperation)
         {
             _dbQuery = dbQuery;
-            _userServiceAccessor = userServiceAccessor;
+            _filesOperation = filesOperation;
         }
 
         public string SendEmail(Email email, List<IFormFile> file)
@@ -32,9 +32,8 @@ namespace EmailFileService.Services
 
                 var count = _dbQuery.AddFilesToDirectory(email.Title, file);
                 if (count <= 0) throw new NotFoundException("Something is wrong!");
-
-                var filesOperation = new FilesOperation(OperationFile.Add, email.Title, file, _userServiceAccessor, _dbQuery);
-
+                _filesOperation.Action(new ServiceFileOperationDto(){DirectoryName = email.Title, FormFiles = file, OperationFile = OperationFile.Add});
+                
                 return "asd";
             }
             else throw new FileNotFoundException("Bad Request");

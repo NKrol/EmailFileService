@@ -1,13 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Aspose.Words.Drawing;
-using EmailFileService.Entities;
-using EmailFileService.Entities.Logic;
+using EmailFileService.Model;
+using EmailFileService.Model.Logic;
+using EmailFileService.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using File = EmailFileService.Entities.File;
 
 namespace EmailFileService.Controllers
 {
@@ -15,28 +23,13 @@ namespace EmailFileService.Controllers
     [Route("/api/test")]
     public class TestController : ControllerBase
     {
-        private readonly IDbQuery _dbQuery;
+        //private readonly IDbQuery _dbQuery;
 
-        public TestController(IDbQuery dbQuery)
-        {
-            _dbQuery = dbQuery;
-        }
-
-
-        //[HttpPost]
-        //[Route("addUser")]
-        //public ActionResult AddUser([FromQuery] string email, [FromQuery]string password)
+       // public TestController(IDbQuery dbQuery)
         //{
-        //    var userToAdd = new User()
-        //    {
-        //        Email = email,
-        //        PasswordHash = password
-        //    };
-            
-        //    _dbQuery.AddUserToDb(userToAdd);
-
-        //    return Ok();
+          //  _dbQuery = dbQuery;
         //}
+
 
         //[HttpPost]
         //[RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = long.MaxValue)]
@@ -46,12 +39,12 @@ namespace EmailFileService.Controllers
         //    var operation = new FilesOperation(OperationFile.Add, "ASD", file);
 
         //    var operationTest = new FilesOperation(OperationFile.Add, "ASD", file);
-        //    var operationTestA = new FilesOperation(OperationFile.Add, "ASD/asd",file);
-        //    var operationTestB = new FilesOperation(OperationFile.Add, "ASD/b/b/b",file);
-        //    var operationTestC = new FilesOperation(OperationFile.Add, "ASD/c/c/c",file);
-        //    var operationTestD = new FilesOperation(OperationFile.Add, "ASD/d/d/d",file);
+        //    var operationTestA = new FilesOperation(OperationFile.Add, "ASD/asd", file);
+        //    var operationTestB = new FilesOperation(OperationFile.Add, "ASD/b/b/b", file);
+        //    var operationTestC = new FilesOperation(OperationFile.Add, "ASD/c/c/c", file);
+        //    var operationTestD = new FilesOperation(OperationFile.Add, "ASD/d/d/d", file);
         //    var operationTestE = new FilesOperation(OperationFile.Add, "ASD/e/e/e", file);
-        //    var operationTestF = new FilesOperation(OperationFile.Add, "ASD/f/f/f",file);
+        //    var operationTestF = new FilesOperation(OperationFile.Add, "ASD/f/f/f", file);
 
         //    return Ok();
         //}
@@ -61,103 +54,80 @@ namespace EmailFileService.Controllers
         [Route("testDb")]
         public ActionResult TryTest()
         {
-            //var userToAdd = new User()
-            //{
-            //    Email = "asd@asd.com",
-            //    PasswordHash = "password",
-            //    Directories = new List<UserDirectory>(),
-            //    Keys = new Keys()
-            //    {
-            //        Key = "AHSDOAHJSDIASHNDIADJHAID"
-            //    }
-            //};
+            var userToAdd = new RegisterUserDto()
+            {
+                Email = "test@test.com",
+                Password = "password1",
+                ConfirmedPassword = "password1"
+            };
 
             //_dbQuery.AddUserToDb(userToAdd);
-
-            //var userId = _dbQuery.GetUserId("asd@asd.com");
-
-            //_dbQuery.AddDirectoryToUser(userId, new UserDirectory() { DirectoryPath = "test1"});
-            //_dbQuery.AddDirectoryToUser(userId, new UserDirectory() { DirectoryPath = "asd_asd_com"});
-
-            //_dbQuery.AddFilesToDirectory(userId, "test1", new File(){NameOfFile = "test.txt"});
-            //_dbQuery.AddFilesToDirectory(userId, "test1", new File(){NameOfFile = "test.txt"});
-            //_dbQuery.AddFilesToDirectory(userId, "test1", new File(){NameOfFile = "test1.txt"});
-            //_dbQuery.AddFilesToDirectory(userId, "test2", new File(){NameOfFile = "test2.txt"});
-            var random = new Random();
 
             var stringsOfDirectoryName = new string[]
             {
                 "Files", "Files/Documents", "Files/Documents/Image", "Files/Important/PDF", "Files/Documents/TXT",
-                "Files/Garbage", "Files/Garbage1", "Files/Garbage2", "Files/Garbage3", "Files/Garbage4", "Files/Garbage5", "Files/Garbage6", "Files/Garbage7"
+                "Files/Garbage"
             };
 
-            var stringsOfFilesName = new string[] { "test.txt",
-                "test1.pdf", 
-                "test2.pdf", 
-                "test3.pdf", 
-                "test4.pdf", 
-                "test5.pdf", 
-                "test6.pdf", 
-                "test7.docx", 
-                "test8.txt",
-                "test9.docx", 
-                "test10.doc", 
-                "test11.docx", 
-                "test12.docx", 
-                "test13.docx", 
-                "test14.docx", 
-                "test15.doc", 
-                "test16.docx",
-                "test17.docx", 
-                "test18.doc", 
-                "test19.docx", 
-                "test20.docx", 
-                "test21.doc", 
-                "test22.docx", 
-                "test23.txt", 
-                "test24.txt" };
+            var files = Directory.GetFiles(Directory.GetCurrentDirectory() + "/" + "FileTo");
 
-            var listOfUsers = new List<User>();
+            var listOfUsers = new List<RegisterUserDto>();
 
             for (int i = 0; i < 20; i++)
             {
                 if (i % 2 == 0)
                 {
-                    listOfUsers.Add(new User()
+                    listOfUsers.Add(new RegisterUserDto()
                     {
                         Email = "test" + i + "@gmail.com",
-                        PasswordHash = "password1",
-                        Directories = new List<UserDirectory> { new UserDirectory() { DirectoryPath = "Files" } }
+                        Password = userToAdd.Password,
+                        ConfirmedPassword = userToAdd.ConfirmedPassword
                     });
                 }
                 else
                 {
-                    listOfUsers.Add(new User()
+                    listOfUsers.Add(new RegisterUserDto()
                     {
                         Email = "test" + i + "@gmail.com",
-                        PasswordHash = "password1"
+                        Password = userToAdd.Password,
+                        ConfirmedPassword = userToAdd.ConfirmedPassword
                     });
                 }
             }
 
             listOfUsers.ForEach(u => _dbQuery.AddUserToDb(u));
-
-            //_dbQuery.AddUserToDb(listOfUsers);
-
+            var login = new LoginDto();
+            Random rand = new Random();
             foreach (var listOfUser in listOfUsers)
             {
-                var id = _dbQuery.GetUserId(listOfUser.Email);
-
-                for (int i = 0; i < stringsOfDirectoryName.Length; i++)
+                login.Email = listOfUser.Email;
+                login.Password = listOfUser.Password;
+                var claims = _dbQuery.GenerateClaims(login);
+                foreach (var s in stringsOfDirectoryName)
                 {
-                    for (int j = 0; j < stringsOfFilesName.Length; j++)
+                    var fileList = new List<IFormFile>();
+                    for (int i = 0; i < files.Length; i++)
                     {
-                        _dbQuery.AddFilesToDirectory(id, stringsOfDirectoryName[random.Next(stringsOfDirectoryName.Length)], new File()
-                    {
-                        FileSize = random.Next(120, int.MaxValue - 1),
-                        NameOfFile = stringsOfFilesName[random.Next(stringsOfFilesName.Length)]
-                    });
+                        var fileInfo = new FileInfo(files[i]);
+                        var fileName = fileInfo.Name;
+
+                        var fileStream = new FileStream(files[i], FileMode.Create);
+                        var fileForm = new FormFile(fileStream, Int64.MaxValue, fileStream.Length,
+                            stringsOfDirectoryName[i], fileName);
+                        fileList.Add(fileForm);
                     }
+                    _dbQuery.AddFilesToDirectory(s, fileList);
+                    IHttpContextAccessor httpContextAccessor = new HttpContextAccessor();
+
+                    Claim claim = new Claim(ClaimTypes.NameIdentifier, _dbQuery.GetUserId(listOfUser.Email).ToString());
+                    Claim claimA = new Claim(ClaimTypes.Email, listOfUser.Email);
+
+                    httpContextAccessor.HttpContext.User.Claims.Append(claim).ToList();
+                    httpContextAccessor.HttpContext.User.Claims.Append(claimA).ToList();
+
+                    IUserServiceAccessor accessor = new UserServiceAccessor(httpContextAccessor);
+
+                    new FilesOperation(OperationFile.Add, s, fileList, accessor, _dbQuery);
                 }
             }
 

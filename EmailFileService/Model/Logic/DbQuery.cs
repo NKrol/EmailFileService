@@ -1,24 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
+using EmailFileService.Authorization;
+using EmailFileService.Entities;
 using EmailFileService.Exception;
-using EmailFileService.Model;
 using EmailFileService.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-namespace EmailFileService.Entities.Logic
+namespace EmailFileService.Model.Logic
 {
     public interface IDbQuery
     {
-        void AddDirectoryToUser(string email, string userDirectory);
+        //void AddDirectoryToUser(string email, string userDirectory);
         int AddFilesToDirectory(string directoryName, List<IFormFile> file);
         int AddUserToDb(RegisterUserDto user);
         void AddUserToDb(List<User> user);
@@ -40,31 +40,17 @@ namespace EmailFileService.Entities.Logic
         private readonly IUserServiceAccessor _serviceAccessor;
         private readonly IPasswordHasher<User> _hasher;
         private readonly Authentication _authentication;
+        private readonly IAuthorizationService _authorizationService;
 
         private const string ErrorUser = "Can't find user!";
         
-
-        public DbQuery(EmailServiceDbContext dbContext, IUserServiceAccessor serviceAccessor, IPasswordHasher<User> hasher, Authentication authentication)
+        public DbQuery(EmailServiceDbContext dbContext, IUserServiceAccessor serviceAccessor, IPasswordHasher<User> hasher, Authentication authentication, IAuthorizationService authorizationService)
         {
             _dbContext = dbContext;
             _serviceAccessor = serviceAccessor;
             _hasher = hasher;
             _authentication = authentication;
-        }
-
-        public void AddDirectoryToUser(string email, string userDirectory)
-        {
-            var userId = GetUserId(email);
-
-            var userWithDirectory = GetUserWithDirectory(userId);
-            if (userWithDirectory is null) throw new NotFoundException(ErrorUser);
-
-            //userWithDirectory.Directories ??= new List<UserDirectory>() { new UserDirectory(){DirectoryPath = userDirectory, IsMainDirectory = true,Files = new List<File>()} }.ToList();
-            var userDirectories = userWithDirectory.Directories.Append(new UserDirectory(){DirectoryPath = userDirectory, Files = new List<File>()}).ToList();
-
-            userWithDirectory.Directories = userDirectories;
-
-            _dbContext.SaveChanges();
+            _authorizationService = authorizationService;
         }
         public void AddDirectoryToUser(string userDirectory)
         {
@@ -101,7 +87,7 @@ namespace EmailFileService.Entities.Logic
                     .FirstOrDefault(f => f.NameOfFile == d.FileName);
                 if (thisFile is not null)
                 {
-                    thisFile.OperationType = OperationType.Modify;
+                    thisFile.OperationType = OperationType.Overwrite;
                     thisFile.LastUpdate = DateTime.Now;
                 }
                 else
@@ -110,16 +96,15 @@ namespace EmailFileService.Entities.Logic
                     .Append(new File()
                     {
                         FileSize = d.Length,
-                        NameOfFile = d.FileName
+                        NameOfFile = d.FileName,
+                        CreatedBy = userId
                     }).ToList();
                     userWithDirectoryAndFiles.Directories.FirstOrDefault(ud => ud.DirectoryPath == directoryName).Files = addToDirectory;
                 }
             });
             return _dbContext.SaveChanges();
         }
-
-        //public string GetKey(int id) => GetUserKey(id);
-
+        
         public int AddUserToDb(RegisterUserDto register)
         {
             var userToAdd = new User()
@@ -185,12 +170,19 @@ namespace EmailFileService.Entities.Logic
         {
             var userId = (int)_serviceAccessor.GetId;
 
-            var fileToRemove = _dbContext.Users
+            var user = _dbContext.Users
                 .Include(f => f.Directories.Where(d => d.DirectoryPath == directoryName))
                 .ThenInclude(e => e.Files.Where(d => d.NameOfFile == fileName)).FirstOrDefault(u => u.Id == userId);
-            
-            fileToRemove.Directories.FirstOrDefault(d => d.DirectoryPath == directoryName).Files.FirstOrDefault(f => f.NameOfFile == fileName).Remove();
 
+            var fileToRemove = user.Directories.FirstOrDefault(d => d.DirectoryPath == directoryName).Files
+                .FirstOrDefault(f => f.NameOfFile == fileName);
+
+            var requirementResult = _authorizationService.AuthorizeAsync(_serviceAccessor.User, fileToRemove,
+                new ResourceOperationRequirement(ResourceOperation.Access));
+
+            if (!requirementResult.Result.Succeeded) throw new RequirementException("Not requirement!");
+
+            fileToRemove.Remove();
             return _dbContext.SaveChanges();
         }
 
@@ -244,6 +236,11 @@ namespace EmailFileService.Entities.Logic
             var actualFile = files.Directories.FirstOrDefault(d => d.DirectoryPath == dto.ActualDirectory).Files
                 .FirstOrDefault(f => f.NameOfFile == dto.FileName);
 
+            var requirementResult = _authorizationService.AuthorizeAsync(_serviceAccessor.User, actualFile,
+                new ResourceOperationRequirement(ResourceOperation.Access));
+
+            if (!requirementResult.Result.Succeeded) throw new RequirementException("Not requirement!");
+
             var directoryToMove = GetUserWithDirectory(userId).Directories
                 .FirstOrDefault(ud => ud.DirectoryPath == dto.DirectoryToMove);
             if (directoryToMove is null)
@@ -254,9 +251,9 @@ namespace EmailFileService.Entities.Logic
             }
 
             var enumerable = directoryToMove.Files.Append(new File()
-                { NameOfFile = actualFile.NameOfFile, FileSize = actualFile.FileSize }).ToList();
+                { NameOfFile = actualFile.NameOfFile, FileSize = actualFile.FileSize, CreatedBy = userId}).ToList();
 
-            actualFile.Remove();
+            actualFile.Move();
 
             directoryToMove.Files = enumerable;
 
@@ -268,7 +265,7 @@ namespace EmailFileService.Entities.Logic
         {
             var user = _dbContext.Users.Include(f => f.Directories).FirstOrDefault(u => u.Email == dtoEmail);
 
-            var mainDirectoryPath = user.Directories.FirstOrDefault(f => f.IsMainDirectory == true).DirectoryPath;
+            var mainDirectoryPath = user?.Directories?.FirstOrDefault(f => f.IsMainDirectory == true)?.DirectoryPath;
 
             return mainDirectoryPath;
         }
@@ -289,11 +286,7 @@ namespace EmailFileService.Entities.Logic
 
 
         // -------------------------------------------------------------------- Method to help  --------------------------------------------------------------------//
-
-
-
-
-
+        
         private User GetUserWithDirectory(int userId) => _dbContext.Users.Include(u => u.Directories).FirstOrDefault(u => u.Id == userId);
 
         private User GetUserWithDirectoryAndFiles(int userId) => _dbContext.Users.Include(u => u.Directories)
@@ -304,8 +297,7 @@ namespace EmailFileService.Entities.Logic
             var claim = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, id.ToString()),
-                new Claim(ClaimTypes.Email, email),
-                new Claim("MainDirectory", userMainPath)
+                new Claim(ClaimTypes.Email, email)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_authentication.JwtIssuer));
@@ -338,7 +330,6 @@ namespace EmailFileService.Entities.Logic
             return new string(Enumerable.Repeat(chars, 32)
                 .Select(s => s[Random.Next(s.Length)]).ToArray());
         }
-
-
+        
     }
 }

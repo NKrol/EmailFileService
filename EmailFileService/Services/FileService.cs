@@ -1,15 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using EmailFileService.Entities.Logic;
 using EmailFileService.Exception;
 using EmailFileService.Model;
+using EmailFileService.Model.Logic;
 
 namespace EmailFileService.Services
 {
     public interface IFileService
     {
         (MemoryStream, string) DownloadFileFromDirectory(string? directory, string fileName);
-        void DeleteFile(string? directory, string fileName);
+        void DeleteFile(string directory, string fileName);
         IEnumerable<ShowMyFilesDto> GetMyFiles(string directory);
         IEnumerable<ShowFolders> GetFolders();
         void MoveFile(MoveFileDto dto);
@@ -17,13 +17,13 @@ namespace EmailFileService.Services
 
     public class FileService : IFileService
     {
-        private readonly IUserServiceAccessor _userServiceAccessor;
+        private readonly IFilesOperation _filesOperation;
         private readonly IDbQuery _dbQuery;
 
-        public FileService(IDbQuery dbQuery, IUserServiceAccessor userServiceAccessor)
+        public FileService(IDbQuery dbQuery, IFilesOperation filesOperation)
         {
             _dbQuery = dbQuery;
-            _userServiceAccessor = userServiceAccessor;
+            _filesOperation = filesOperation;
         }
 
         public (MemoryStream, string) DownloadFileFromDirectory(string? directory, string fileName)
@@ -31,22 +31,19 @@ namespace EmailFileService.Services
             var check = _dbQuery.UserHaveThisFileInThisDirectory(directory, fileName, out string contentType);
 
             if (!check) throw new NotFoundException("We can't find this file!");
-            var stream = new FilesOperation(_dbQuery, _userServiceAccessor, directory, fileName);
-
-            var memory = stream.DownloadFile();
-
+            var memory = _filesOperation.DownloadFile(directory, fileName);
             return (memory, contentType);
         }
         
-        public void DeleteFile(string? directory, string fileName)
+        public void DeleteFile(string directory, string fileName)
         {
             var count = _dbQuery.DeleteFile(directory, fileName);
 
             if (count <= 0) throw new NotFoundException("This File is already deleted");
 
             var fileNameToRemove = fileName.Replace(".", "_enc.");
-
-            var filesOperation = new FilesOperation(OperationFile.Delete, directory, fileNameToRemove, _userServiceAccessor);
+            
+            _filesOperation.Action(new ServiceFileOperationDto(){OperationFile = OperationFile.Delete, DirectoryName = directory, FileName = fileNameToRemove});
 
         }
 
@@ -69,7 +66,7 @@ namespace EmailFileService.Services
 
             _dbQuery.MoveFile(dto);
 
-            var unused = new FilesOperation(OperationFile.Move, _dbQuery, _userServiceAccessor, dto);
+            _filesOperation.Action(new ServiceFileOperationDto(){OperationFile = OperationFile.Move,ActualFileDirectory = dto.ActualDirectory, NewFileDirectory = dto.DirectoryToMove, FileName = dto.FileName});
         }
 
         private static void ValidateMoveFileDto(ref MoveFileDto dto)

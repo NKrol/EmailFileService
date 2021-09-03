@@ -21,6 +21,7 @@ namespace EmailFileService
             CreateMap<RegisterUserDto, User>()
                 .ForMember(u => u.Email, c => c.MapFrom(ru => ru.Email))
                 .ForMember(u => u.PasswordHash, s => s.MapFrom(ru => ru.Password));
+            
         }
     }
 }

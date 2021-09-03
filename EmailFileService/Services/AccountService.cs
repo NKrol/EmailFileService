@@ -1,20 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.IO;
-using System.Linq;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
-using EmailFileService.Entities;
-using EmailFileService.Entities.Logic;
+﻿
 using EmailFileService.Exception;
 using EmailFileService.Model;
-using Microsoft.AspNetCore.Hosting.Server.Features;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
+using EmailFileService.Model.Logic;
 
 namespace EmailFileService.Services
 {
@@ -27,10 +14,12 @@ namespace EmailFileService.Services
     public class AccountService : IAccountService
     {
         private readonly IDbQuery _dbQuery;
+        private readonly IFilesOperation _filesOperation;
 
-        public AccountService(IDbQuery dbQuery)
+        public AccountService(IDbQuery dbQuery, IFilesOperation filesOperation)
         {
             _dbQuery = dbQuery;
+            _filesOperation = filesOperation;
         }
 
 
@@ -40,7 +29,7 @@ namespace EmailFileService.Services
             if (count > 0)
             {
                 var mainDirectory = _dbQuery.GetMainDirectory(dto.Email);
-                var filesOperation = new FilesOperation(OperationFile.Add, mainDirectory);
+                _filesOperation.Action(new ServiceFileOperationDto(){OperationFile = OperationFile.Add, DirectoryName = mainDirectory});
             }
             else throw new NotFoundException("Bad Access");
 

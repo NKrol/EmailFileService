@@ -21,7 +21,7 @@ namespace EmailFileService.Model.Validators
 
             RuleFor(e => e.Sender).Custom(((value, context) =>
             {
-                var emailExist = dbContext.Users.First(c => c.Email == value);
+                var emailExist = dbContext?.Users?.FirstOrDefault(c => c.Email == value);
                 if (emailExist is null)
                 {
                     context.AddFailure("Email isn't exist!");
