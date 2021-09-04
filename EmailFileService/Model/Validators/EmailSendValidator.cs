@@ -17,7 +17,9 @@ namespace EmailFileService.Model.Validators
         {
             RuleFor(u => u.Receiver).Equal("filesservice@api.com").EmailAddress();
 
-            RuleFor(e => e.Sender).EmailAddress();
+            RuleFor(e => e.Sender).EmailAddress().NotNull();
+
+            RuleFor(e => e.Title).NotNull();
 
             RuleFor(e => e.Sender).Custom(((value, context) =>
             {

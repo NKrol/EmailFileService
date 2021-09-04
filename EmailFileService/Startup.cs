@@ -57,7 +57,7 @@ namespace EmailFileService
             services.Configure<FormOptions>(x =>
             {
                 x.ValueLengthLimit = int.MaxValue;
-                x.MultipartBodyLengthLimit = int.MaxValue;
+                x.MultipartBodyLengthLimit = long.MaxValue;
                 x.MultipartHeadersLengthLimit = int.MaxValue;
             });
             services.AddScoped<IFileEncryptDecryptService, FileEncryptDecryptService>();
@@ -81,6 +81,7 @@ namespace EmailFileService
                     .UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             services.AddScoped<IValidator<RegisterUserDto>, RegisterValidator>();
             services.AddScoped<IValidator<Email>, EmailSendValidator>();
+            services.AddScoped<IValidator<MoveFileDto>, MoveFileDtoValidator>();
             services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
             services.AddHttpContextAccessor();
         }
