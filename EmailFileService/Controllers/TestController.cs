@@ -10,7 +10,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Aspose.Words.Drawing;
 using EmailFileService.Model;
-using EmailFileService.Model.Logic;
 using EmailFileService.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;

@@ -1,0 +1,24 @@
+﻿<Window x:Class="EmailFileServiceWpfApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:EmailFileServiceWpfApp"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+
+    <Grid RenderTransformOrigin="0.384,0.499">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"></ColumnDefinition>
+            <ColumnDefinition Width="9*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="58*">
+            </RowDefinition>
+            <RowDefinition Height="361*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Button x:Name="ButtonStart" Content="Go" Click="ButtonStart_OnClick">
+        </Button>
+        <TextBlock x:Name="TextBlockResult" Grid.Column="1" Grid.Row="1"></TextBlock>
+    </Grid>
+</Window>

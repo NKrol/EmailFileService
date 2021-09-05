@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EmailFileService.Entities;
-using EmailFileService.Model.Logic;
+using EmailFileService.Logic.FileManager;
 using EmailFileService.Services;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;

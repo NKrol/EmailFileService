@@ -3,7 +3,8 @@ using EmailFileService.Model;
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 using System.IO;
-using EmailFileService.Model.Logic;
+using EmailFileService.Logic.Database;
+using EmailFileService.Logic.FileManager;
 
 namespace EmailFileService.Services
 {
@@ -26,7 +27,7 @@ namespace EmailFileService.Services
 
         public string SendEmail(Email email, List<IFormFile> file)
         {
-            if (file != null && file.Count > 0)
+            if (file != null & file.Count > 0)
             {
                 ValidateTitle(ref email);
 
@@ -43,7 +44,7 @@ namespace EmailFileService.Services
         {
             var title = email.Title;
 
-            if (title[title.Length - 1] == '/')
+            if (title[^1] == '/')
             {
                 title = title.Remove(title.Length - 1, 1);
             }

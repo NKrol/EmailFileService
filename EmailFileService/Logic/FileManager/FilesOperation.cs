@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using EmailFileService.Exception;
+using EmailFileService.Logic.Database;
+using EmailFileService.Model;
 using EmailFileService.Services;
 using Microsoft.AspNetCore.Http;
 
-namespace EmailFileService.Model.Logic
+namespace EmailFileService.Logic.FileManager
 {
     public interface IFilesOperation
     {

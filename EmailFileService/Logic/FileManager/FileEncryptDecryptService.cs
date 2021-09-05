@@ -1,12 +1,13 @@
 ﻿using System;
 using System.IO;
 using System.Security.Cryptography;
-using EmailFileService.Model.Logic;
+using EmailFileService.Logic.Database;
+using EmailFileService.Services;
 using Spire.Doc;
 using Document = Spire.Doc.Document;
 using File = System.IO.File;
 
-namespace EmailFileService.Services
+namespace EmailFileService.Logic.FileManager
 {
     public interface IFileEncryptDecryptService
     {

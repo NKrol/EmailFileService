@@ -4,9 +4,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using AutoMapper;
 using EmailFileService.Authorization;
 using EmailFileService.Entities;
 using EmailFileService.Exception;
+using EmailFileService.Model;
 using EmailFileService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -14,7 +16,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-namespace EmailFileService.Model.Logic
+namespace EmailFileService.Logic.Database
 {
     public interface IDbQuery
     {
@@ -22,7 +24,6 @@ namespace EmailFileService.Model.Logic
         int AddFilesToDirectory(string directoryName, List<IFormFile> file);
         int AddUserToDb(RegisterUserDto user);
         void AddUserToDb(List<User> user);
-        int GetUserId(string email);
         string GetUserKey(int id);
         string GetMainDirectory(string dtoEmail);
         string GenerateClaims(LoginDto dto);
@@ -37,6 +38,7 @@ namespace EmailFileService.Model.Logic
     public class DbQuery : IDbQuery
     {
         private readonly EmailServiceDbContext _dbContext;
+        private readonly IMapper _mapper;
         private readonly IUserServiceAccessor _serviceAccessor;
         private readonly IPasswordHasher<User> _hasher;
         private readonly Authentication _authentication;
@@ -44,9 +46,10 @@ namespace EmailFileService.Model.Logic
 
         private const string ErrorUser = "Can't find user!";
         
-        public DbQuery(EmailServiceDbContext dbContext, IUserServiceAccessor serviceAccessor, IPasswordHasher<User> hasher, Authentication authentication, IAuthorizationService authorizationService)
+        public DbQuery(EmailServiceDbContext dbContext, IMapper mapper ,IUserServiceAccessor serviceAccessor, IPasswordHasher<User> hasher, Authentication authentication, IAuthorizationService authorizationService)
         {
             _dbContext = dbContext;
+            _mapper = mapper;
             _serviceAccessor = serviceAccessor;
             _hasher = hasher;
             _authentication = authentication;
@@ -107,22 +110,7 @@ namespace EmailFileService.Model.Logic
         
         public int AddUserToDb(RegisterUserDto register)
         {
-            var userToAdd = new User()
-            {
-                Email = register.Email,
-                Directories = new List<UserDirectory>()
-                {
-                    new UserDirectory()
-                    {
-                        DirectoryPath = GeneratePath(register.Email),
-                        IsMainDirectory = true
-                    }
-                },
-                Keys = new Keys()
-                {
-                    Key = GenerateKey()
-                }
-            };
+            var userToAdd = _mapper.Map<User>(register);
 
             var hashPassword = _hasher.HashPassword(userToAdd, register.Password);
 
@@ -185,8 +173,6 @@ namespace EmailFileService.Model.Logic
             fileToRemove.Remove();
             return _dbContext.SaveChanges();
         }
-
-        public int GetUserId(string email) => _dbContext.Users.FirstOrDefault(u => u.Email == email).Id;
 
         public string GetUserKey(int id) => _dbContext.Users.Include(u => u.Keys).FirstOrDefault(u => u.Id == id)?.Keys.Key;
 
@@ -316,20 +302,5 @@ namespace EmailFileService.Model.Logic
             return tokenHandler.WriteToken(token);
         }
 
-        private static string GeneratePath(string email)
-        {
-            var path = "";
-            if (email.Length > 0) path = email.Replace('@', '_').Replace('.', '_');
-            return path;
-        }
-
-        private static readonly Random Random = new();
-        private static string GenerateKey()
-        {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            return new string(Enumerable.Repeat(chars, 32)
-                .Select(s => s[Random.Next(s.Length)]).ToArray());
-        }
-        
     }
 }

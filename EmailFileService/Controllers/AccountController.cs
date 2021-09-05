@@ -1,6 +1,7 @@
 ﻿using EmailFileService.Exception;
 using EmailFileService.Model;
 using EmailFileService.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EmailFileService.Controllers
@@ -20,10 +21,8 @@ namespace EmailFileService.Controllers
         [Route("register")]
         public ActionResult Register([FromBody] RegisterUserDto dto)
         {
-            if (!ModelState.IsValid)
-            {
-                throw new CreatedAccountException("");
-            }
+            if (!ModelState.IsValid) throw new CreatedAccountException("");
+
             _accountService.Register(dto);
 
             return Ok();
@@ -37,5 +36,13 @@ namespace EmailFileService.Controllers
 
             return Ok(token);
         }
+
+        //[HttpGet]
+        //[Route("{id}/details")]
+        //[Authorize]
+        //public ActionResult<UserDetailsDto>()
+        //{
+
+        //}
     }
 }

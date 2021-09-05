@@ -26,8 +26,7 @@ namespace EmailFileService.Controllers
         public ActionResult SendEmail([FromForm] Email email, [FromForm] List<IFormFile> file)
         {
             var result = _emailService.SendEmail(email, file);
-
-
+            
             return Ok(result);
         }
 

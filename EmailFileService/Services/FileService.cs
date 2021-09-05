@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using EmailFileService.Exception;
+using EmailFileService.Logic.Database;
+using EmailFileService.Logic.FileManager;
 using EmailFileService.Model;
-using EmailFileService.Model.Logic;
 
 namespace EmailFileService.Services
 {
@@ -74,8 +75,8 @@ namespace EmailFileService.Services
             var actualDirectory = dto.ActualDirectory;
             var newDirectory = dto.DirectoryToMove;
 
-            if (actualDirectory[actualDirectory.Length - 1] == '/') actualDirectory = actualDirectory.Remove(actualDirectory.Length - 1, 1);
-            if (newDirectory[newDirectory.Length - 1] == '/') newDirectory = newDirectory.Remove(newDirectory.Length - 1, 1);
+            if (actualDirectory[^1] == '/') actualDirectory = actualDirectory.Remove(actualDirectory.Length - 1, 1);
+            if (newDirectory[^1] == '/') newDirectory = newDirectory.Remove(newDirectory.Length - 1, 1);
             if (newDirectory[0] == '/') newDirectory = newDirectory.Remove(0, 1);
             if (actualDirectory[0] == '/') actualDirectory = actualDirectory.Remove(0, 1);
             dto.ActualDirectory = actualDirectory;

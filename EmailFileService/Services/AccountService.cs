@@ -1,7 +1,8 @@
 ﻿
 using EmailFileService.Exception;
+using EmailFileService.Logic.Database;
+using EmailFileService.Logic.FileManager;
 using EmailFileService.Model;
-using EmailFileService.Model.Logic;
 
 namespace EmailFileService.Services
 {

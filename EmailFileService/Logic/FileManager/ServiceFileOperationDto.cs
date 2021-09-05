@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO.Packaging;
-using System.Linq;
-using System.Threading.Tasks;
-using EmailFileService.Model.Logic;
+﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 
-namespace EmailFileService.Model
+namespace EmailFileService.Logic.FileManager
 {
     public class ServiceFileOperationDto
     {
