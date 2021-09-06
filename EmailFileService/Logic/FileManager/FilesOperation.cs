@@ -1,10 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using EmailFileService.Exception;
 using EmailFileService.Logic.Database;
 using EmailFileService.Model;
 using EmailFileService.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace EmailFileService.Logic.FileManager
 {
@@ -89,10 +93,19 @@ namespace EmailFileService.Logic.FileManager
 
         private void AddFileToDirectory(string fullPath, IFormFile fileStream)
         {
+            using var encryptor = Aes.Create();
+            var pdb = new Rfc2898DeriveBytes(_dbQuery.GetUserKey((int)_serviceAccessor.GetId), new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
+            encryptor.Key = pdb.GetBytes(32);
+            encryptor.IV = pdb.GetBytes(16);
+
             using var writer = new FileStream(fullPath, FileMode.Create);
-            fileStream.CopyTo(writer);
-            writer.Close();
-            _encrypt.FileEncrypt(fullPath);
+            using var cs = new CryptoStream(writer, encryptor.CreateEncryptor(), CryptoStreamMode.Write);
+            var cos = fileStream.OpenReadStream();
+            int data;
+            while ((data = cos.ReadByte()) != -1)
+            {
+                cs.WriteByte((byte)data);
+            }
         }
 
         private static void AddDirectory(string pathWithOutFileName)
@@ -108,15 +121,21 @@ namespace EmailFileService.Logic.FileManager
         {
             var directoryToUse = _directoryName + _dbQuery.GetMainDirectory(_serviceAccessor?.GetEmail) + "/" +
                                  directory + "/" + fileName;
-            _encrypt.FileDecrypt(directoryToUse);
 
             var memory = new MemoryStream();
-            using (var reader = new FileStream(directoryToUse, FileMode.Open))
+
+            using var encryptor = Aes.Create();
+            var pdb = new Rfc2898DeriveBytes(_dbQuery.GetUserKey((int)_serviceAccessor.GetId), new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
+            encryptor.Key = pdb.GetBytes(32);
+            encryptor.IV = pdb.GetBytes(16);
+            using var fsInput = new FileStream(directoryToUse, FileMode.Open);
+            using var cs = new CryptoStream(fsInput, encryptor.CreateDecryptor(), CryptoStreamMode.Read);
+            int data;
+            while ((data = cs.ReadByte()) != -1)
             {
-                reader.CopyTo(memory);
-                reader.Close();
+                memory.WriteByte((byte)data);
             }
-            _encrypt.FileEncrypt(directoryToUse);
+
             return memory;
         }
     }

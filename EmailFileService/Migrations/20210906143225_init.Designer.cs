@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmailFileService.Migrations
 {
     [DbContext(typeof(EmailServiceDbContext))]
-    [Migration("20210902224840_CreatedBy")]
-    partial class CreatedBy
+    [Migration("20210906143225_init")]
+    partial class init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

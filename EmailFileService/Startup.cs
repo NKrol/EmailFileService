@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -57,9 +58,12 @@ namespace EmailFileService
             });
             services.Configure<FormOptions>(x =>
             {
-                x.ValueLengthLimit = int.MaxValue;
-                x.MultipartBodyLengthLimit = long.MaxValue;
-                x.MultipartHeadersLengthLimit = int.MaxValue;
+                x.MultipartHeadersLengthLimit = Int32.MaxValue;
+                x.MultipartBoundaryLengthLimit = Int32.MaxValue;
+                x.MultipartBodyLengthLimit = Int64.MaxValue;
+                x.ValueLengthLimit = Int32.MaxValue;
+                x.BufferBodyLengthLimit = Int64.MaxValue;
+                x.MemoryBufferThreshold = Int32.MaxValue;
             });
             services.AddScoped<IFileEncryptDecryptService, FileEncryptDecryptService>();
             services.AddAutoMapper(GetType().Assembly);

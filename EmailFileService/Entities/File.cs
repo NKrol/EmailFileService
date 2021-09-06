@@ -15,7 +15,7 @@ namespace EmailFileService.Entities
             get =>  _nameOfFile;
             set
             {
-                var ex = value.Substring(value.LastIndexOf('.'), value.Length - value.LastIndexOf('.'));
+                var ex = value[value.LastIndexOf('.')..];
 
                 FileType = GetTypeOfFile()[ex];
 

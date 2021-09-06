@@ -302,5 +302,28 @@ namespace EmailFileService.Logic.Database
             return tokenHandler.WriteToken(token);
         }
 
+        private static List<string> MakeUserPathList(string path)
+        {
+            List<string> enumerable = new List<string>();
+            string pathA = null;
+            var counter = 1;
+            foreach (var s in path)
+            {
+                if (s == '/' | counter == path.Length)
+                {
+                    if (counter == path.Length) pathA += s;
+                    enumerable.Add(pathA);
+                    pathA = null;
+                    counter++;
+                }
+                else
+                {
+                    pathA += s;
+                    counter++;
+                }
+            }
+            return enumerable;
+        }
+
     }
 }
