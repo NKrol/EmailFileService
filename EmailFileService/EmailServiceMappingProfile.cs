@@ -31,7 +31,8 @@ namespace EmailFileService
                     {
                         DirectoryPath = GeneratePath(x.Email),
                         IsMainDirectory = true,
-                        Files = new List<File>()
+                        Files = new List<File>(),
+                        Children = new List<UserDirectory>()
                     }
                 }))
                 .ForMember(d => d.Email, c => c.MapFrom(d => d.Email))
@@ -40,11 +41,13 @@ namespace EmailFileService
                     Key = GenerateKey()
                 }));
 
+            CreateMap<UserDirectory, ChildrenDirectories>();
+
 
 
         }
 
-        private string GeneratePath(string email)
+        private static string GeneratePath(string email)
         {
             var path = email.Replace('@', '_').Replace('@', '_');
 

@@ -25,17 +25,15 @@ namespace EmailFileService.Logic.FileManager
         private List<IFormFile> _fileForm;
         private readonly IUserServiceAccessor _serviceAccessor;
         private readonly IDbQuery _dbQuery;
-        private readonly IFileEncryptDecryptService _encrypt;
         private string _fileName;
         private string _newDirectoryName;
         private string _actualDirectoryName;
 
 
-        public FilesOperation(IDbQuery dbQuery, IUserServiceAccessor serviceAccessor, IFileEncryptDecryptService encrypt)
+        public FilesOperation(IDbQuery dbQuery, IUserServiceAccessor serviceAccessor)
         {
             _dbQuery = dbQuery;
             _serviceAccessor = serviceAccessor;
-            _encrypt = encrypt;
             _directoryName = Directory.GetCurrentDirectory() + "/UserDirectory/";
         }
 
@@ -112,7 +110,6 @@ namespace EmailFileService.Logic.FileManager
         {
             var exist = Directory.Exists(pathWithOutFileName);
             if (!exist) Directory.CreateDirectory(pathWithOutFileName);
-            else return;
             var existAfter = Directory.Exists(pathWithOutFileName);
             if (!existAfter) throw new NotFoundException("Something is wrong with create directory");
         }

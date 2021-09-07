@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -20,6 +21,8 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using NLog;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace EmailFileService
 {
@@ -81,8 +84,8 @@ namespace EmailFileService
             services.AddRazorPages();
             services.AddDbContext<EmailServiceDbContext>(options =>
                 options
-                    //.LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Command.Name }, LogLevel.Information)
-                    //.EnableSensitiveDataLogging()
+                    .LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Command.Name }, LogLevel.Information)
+                    .EnableSensitiveDataLogging()
                     .UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             services.AddScoped<IValidator<RegisterUserDto>, RegisterValidator>();
             services.AddScoped<IValidator<Email>, EmailSendValidator>();

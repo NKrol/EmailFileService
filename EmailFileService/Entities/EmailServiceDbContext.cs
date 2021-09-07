@@ -39,6 +39,11 @@ namespace EmailFileService.Entities
                 .Property(ud => ud.DirectoryPath)
                 .IsRequired();
 
+            modelBuilder.Entity<UserDirectory>()
+                .HasOne(d => d.Parent)
+                .WithMany(p => p.Children);
+            //.Map(m => m.MapKey(p => p.Id, "ParentId"));
+
         }
 
         public User FindUser(int? userId, string directory, string fileName)

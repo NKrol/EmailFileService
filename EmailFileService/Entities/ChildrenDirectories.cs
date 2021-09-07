@@ -1,15 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace EmailFileService.Entities
 {
-    public class UserDirectory : EntityBase
+    public class ChildrenDirectories : EntityBase
     {
         public string DirectoryPath { get; set; }
-        public virtual User User { get; set; }
         public int? ParentId { get; set; }
         public virtual UserDirectory Parent { get; set; }
-        public virtual List<UserDirectory> Children { get; set; }
         public virtual IEnumerable<File> Files { get; set; }
-        public bool IsMainDirectory { get; set; } = false;
     }
 }

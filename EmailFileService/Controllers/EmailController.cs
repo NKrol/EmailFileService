@@ -1,5 +1,6 @@
 ﻿
 using System.Collections.Generic;
+using EmailFileService.Logic.Database;
 using EmailFileService.Model;
 using EmailFileService.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -13,10 +14,12 @@ namespace EmailFileService.Controllers
     public class EmailController : ControllerBase
     {
         private readonly IEmailService _emailService;
+        private readonly IDbQuery _dbQuery;
 
-        public EmailController(IEmailService emailService)
+        public EmailController(IEmailService emailService, IDbQuery dbQuery)
         {
             _emailService = emailService;
+            _dbQuery = dbQuery;
         }
 
         [HttpPost]
@@ -25,9 +28,13 @@ namespace EmailFileService.Controllers
         [Authorize]
         public ActionResult SendEmail([FromForm] Email email, [FromForm] List<IFormFile> file)
         {
-            var result = _emailService.SendEmail(email, file);
+            //var result = _emailService.SendEmail(email, file);
             
-            return Ok(result);
+            _dbQuery.TestAddToDirectory(email.Title);
+
+
+
+            return Ok();
         }
 
         //Method for test upload File and create account

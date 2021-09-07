@@ -10,7 +10,7 @@ namespace EmailFileService.Entities
     {
         public string Email { get; set; }
         public string PasswordHash { get; set; }
-        public virtual IEnumerable<UserDirectory> Directories { get; set; }
+        public virtual ICollection<UserDirectory> Directories { get; set; } = new List<UserDirectory>();
 
         public virtual Keys Keys { get; set; }
 

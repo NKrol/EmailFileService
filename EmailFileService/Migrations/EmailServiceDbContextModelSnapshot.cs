@@ -151,10 +151,15 @@ namespace EmailFileService.Migrations
                     b.Property<int>("OperationType")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
 
                     b.HasIndex("UserId");
 
@@ -179,9 +184,17 @@ namespace EmailFileService.Migrations
 
             modelBuilder.Entity("EmailFileService.Entities.UserDirectory", b =>
                 {
-                    b.HasOne("EmailFileService.Entities.User", null)
+                    b.HasOne("EmailFileService.Entities.UserDirectory", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId");
+
+                    b.HasOne("EmailFileService.Entities.User", "User")
                         .WithMany("Directories")
                         .HasForeignKey("UserId");
+
+                    b.Navigation("Parent");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EmailFileService.Entities.User", b =>
@@ -191,6 +204,8 @@ namespace EmailFileService.Migrations
 
             modelBuilder.Entity("EmailFileService.Entities.UserDirectory", b =>
                 {
+                    b.Navigation("Children");
+
                     b.Navigation("Files");
                 });
 #pragma warning restore 612, 618

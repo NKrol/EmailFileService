@@ -56,8 +56,9 @@ namespace EmailFileService.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     DirectoryPath = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsMainDirectory = table.Column<bool>(type: "bit", nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: true),
+                    ParentId = table.Column<int>(type: "int", nullable: true),
+                    IsMainDirectory = table.Column<bool>(type: "bit", nullable: false),
                     AddDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LastUpdate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     OperationType = table.Column<int>(type: "int", nullable: false),
@@ -66,6 +67,12 @@ namespace EmailFileService.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserDirectories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserDirectories_UserDirectories_ParentId",
+                        column: x => x.ParentId,
+                        principalTable: "UserDirectories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_UserDirectories_Users_UserId",
                         column: x => x.UserId,
@@ -105,6 +112,11 @@ namespace EmailFileService.Migrations
                 name: "IX_Files_UserDirectoryId",
                 table: "Files",
                 column: "UserDirectoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserDirectories_ParentId",
+                table: "UserDirectories",
+                column: "ParentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserDirectories_UserId",
