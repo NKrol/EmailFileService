@@ -340,7 +340,7 @@ namespace EmailFileService.Logic.Database
         {
             var makeUserPathList = MakeUserPathList(path);
             AddDirectoryToUserNew(makeUserPathList);
-            DirectoryToString();
+            //DirectoryToString();
         }
         /// <summary>
         /// Generate list of userDirectory with just directoryPath property
@@ -372,8 +372,8 @@ namespace EmailFileService.Logic.Database
 
             enumerable.ForEach(x =>
             {
-                var cos = new UserDirectory() { DirectoryPath = x, Children = new List<UserDirectory>() };
-                listOfDirectory.Add(cos);
+                var helper = new UserDirectory() { DirectoryPath = x, Children = new List<UserDirectory>(), User = _dbContext.Users.FirstOrDefault(u => u.Id == _serviceAccessor.GetId)};
+                listOfDirectory.Add(helper);
             });
             return listOfDirectory;
         }
@@ -391,25 +391,32 @@ namespace EmailFileService.Logic.Database
                 .Directories
                 .FirstOrDefault(f => f.IsMainDirectory == true);
             
-            var counter = 0;
 
             var listOfDirectorySorted = new List<UserDirectory>();
 
-            var any = _dbContext.UserDirectories.Where(f => f.User.Id == userId);
+            var any = _dbContext.UserDirectories.Include(d => d.Children).Where(f => f.User.Id == userId);
 
+            var helper = new UserDirectory();
+            var flag = false;
             for (var i = 0; i < listOfDirectories.Count; i++)
             {
                 var sameDirectory = any.FirstOrDefault(e => e.DirectoryPath == listOfDirectories[i].DirectoryPath);
                 if (sameDirectory is not null)
                 {
                     listOfDirectories[i] = sameDirectory;
+                    helper = sameDirectory;
+                    flag = true;
                 }
                 else
                 {
                     listOfDirectories[i].User = _dbContext.Users.FirstOrDefault(u => u.Id == _serviceAccessor.GetId);
                     listOfDirectories[i].Parent = mainDirectoryUser;
+                    if (helper.DirectoryPath is not null)
+                    {
+                        listOfDirectories[i].Parent = helper;
+                    }
                 }
-                if ((i + 1) != listOfDirectories.Count)
+                if ((i + 1) != listOfDirectories.Count & flag == false)
                 {
                     var sameDirectoryChildren = any.FirstOrDefault(e => e.DirectoryPath == listOfDirectories[i + 1].DirectoryPath);
                     listOfDirectories[i].Children.Add(sameDirectoryChildren ?? listOfDirectories[i + 1]);
@@ -420,9 +427,17 @@ namespace EmailFileService.Logic.Database
                     listOfDirectories[i].Parent = sameDirectoryParent ?? listOfDirectories[i - 1];
                 }
                 listOfDirectorySorted.Add(listOfDirectories[i]);
+                any = _dbContext.UserDirectories.Where(f => f.User.Id == userId);
             }
-            
-            _dbContext.UserDirectories.UpdateRange(listOfDirectorySorted);
+
+            try
+            {
+                _dbContext.UserDirectories.UpdateRange(listOfDirectorySorted);
+            }
+            catch (System.Exception e)
+            {
+                _dbContext.AddRange(listOfDirectorySorted);
+            }
 
             var cos = _dbContext.SaveChanges();
 
